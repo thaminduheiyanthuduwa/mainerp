@@ -1,0 +1,76 @@
+package com.kiu.mainerp.mainerp.service.impl;
+
+import com.kiu.mainerp.mainerp.entity.AttendanceEntity;
+import com.kiu.mainerp.mainerp.repository.AttendanceRepository;
+import com.kiu.mainerp.mainerp.response.ResponseList;
+import com.kiu.mainerp.mainerp.service.AttendanceManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Service
+public class AttendanceManagerImpl implements AttendanceManager {
+
+    @Autowired
+    AttendanceRepository attendanceRepository;
+
+    @Override
+    public ResponseList getMyAttendance(int id) throws ParseException {
+
+        Date date = new Date (System.currentTimeMillis());
+
+        SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
+
+        List<AttendanceEntity> data = attendanceRepository.findByEmployeeIdOrderByIdDesc(id);
+
+        List<AttendanceEntity> attendanceEntities = new ArrayList<>();
+
+        for (AttendanceEntity obj : data) {
+            if (convertDateToDateOnly.parse(convertDateToDateOnly.format(date)).before(obj.getDateTime())){
+                attendanceEntities.add(obj);
+            }
+        }
+
+
+        ResponseList responseList = new ResponseList();
+        responseList.setCode(200);
+        responseList.setMsg("Attendance data find by id");
+        responseList.setData(attendanceEntities);
+        return responseList;
+    }
+
+    @Override
+    public ResponseList getMyYesterdayAttendance() throws ParseException {
+        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+
+        SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
+
+        List<AttendanceEntity> data = attendanceRepository.getAttendanceAfterDate(convertDateToDateOnly.format(date));
+
+        List<AttendanceEntity> attendanceEntities = new ArrayList<>();
+
+        for (AttendanceEntity obj : data) {
+            if (convertDateToDateOnly.format(date).equalsIgnoreCase(convertDateToDateOnly.format(obj.getDateTime()))){
+                attendanceEntities.add(obj);
+            }
+        }
+
+
+        ResponseList responseList = new ResponseList();
+        responseList.setCode(200);
+        responseList.setMsg("Attendance data find by id");
+        responseList.setData(attendanceEntities);
+        return responseList;
+    }
+
+    @Override
+    public ResponseList createAutoAttendance() throws ParseException {
+        return null;
+    }
+
+}
