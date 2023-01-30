@@ -2,6 +2,7 @@ package com.kiu.mainerp.mainerp.service.impl;
 
 import com.kiu.mainerp.mainerp.entity.AttendanceEntity;
 import com.kiu.mainerp.mainerp.repository.AttendanceRepository;
+import com.kiu.mainerp.mainerp.response.AttendanceObject;
 import com.kiu.mainerp.mainerp.response.ResponseList;
 import com.kiu.mainerp.mainerp.service.AttendanceManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,17 +26,26 @@ public class AttendanceManagerImpl implements AttendanceManager {
         Date date = new Date (System.currentTimeMillis());
 
         SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
+        SimpleDateFormat convertStringToDateTypeTwo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         List<AttendanceEntity> data = attendanceRepository.findByEmployeeIdOrderByIdDesc(id);
 
-        List<AttendanceEntity> attendanceEntities = new ArrayList<>();
+        List<AttendanceObject> attendanceEntities = new ArrayList<>();
 
         for (AttendanceEntity obj : data) {
             if (convertDateToDateOnly.parse(convertDateToDateOnly.format(date)).before(obj.getDateTime())){
-                attendanceEntities.add(obj);
+                AttendanceObject attendanceObject = new AttendanceObject();
+                attendanceObject.setId(obj.getId());
+                attendanceObject.setEmployeeId(obj.getEmployeeId());
+                attendanceObject.setDateTime(obj.getDateTime());
+                attendanceObject.setDateTimeText(convertDateToTimeOnly.format(obj.getDateTime()));
+                attendanceObject.setCreatedAt(obj.getCreatedAt());
+                attendanceObject.setDateTimeFullText(convertStringToDateTypeTwo.format(obj.getDateTime()));
+                attendanceObject.setCreatedAtFullText(convertStringToDateTypeTwo.format(obj.getCreatedAt()));
+                attendanceEntities.add(attendanceObject);
             }
         }
-
 
         ResponseList responseList = new ResponseList();
         responseList.setCode(200);
@@ -46,17 +56,29 @@ public class AttendanceManagerImpl implements AttendanceManager {
 
     @Override
     public ResponseList getMyYesterdayAttendance() throws ParseException {
+
+        SimpleDateFormat convertStringToDateTypeTwo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000);
 
         SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
 
         List<AttendanceEntity> data = attendanceRepository.getAttendanceAfterDate(convertDateToDateOnly.format(date));
 
-        List<AttendanceEntity> attendanceEntities = new ArrayList<>();
+        List<AttendanceObject> attendanceEntities = new ArrayList<>();
 
         for (AttendanceEntity obj : data) {
             if (convertDateToDateOnly.format(date).equalsIgnoreCase(convertDateToDateOnly.format(obj.getDateTime()))){
-                attendanceEntities.add(obj);
+                AttendanceObject attendanceObject = new AttendanceObject();
+                attendanceObject.setId(obj.getId());
+                attendanceObject.setEmployeeId(obj.getEmployeeId());
+                attendanceObject.setDateTime(obj.getDateTime());
+                attendanceObject.setDateTimeText(convertDateToTimeOnly.format(obj.getDateTime()));
+                attendanceObject.setCreatedAt(obj.getCreatedAt());
+                attendanceObject.setDateTimeFullText(convertStringToDateTypeTwo.format(obj.getDateTime()));
+                attendanceObject.setCreatedAtFullText(convertStringToDateTypeTwo.format(obj.getCreatedAt()));
+                attendanceEntities.add(attendanceObject);
             }
         }
 
