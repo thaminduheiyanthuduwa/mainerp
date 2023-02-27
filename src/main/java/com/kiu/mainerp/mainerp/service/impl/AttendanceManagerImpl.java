@@ -59,7 +59,7 @@ public class AttendanceManagerImpl implements AttendanceManager {
 
         SimpleDateFormat convertStringToDateTypeTwo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000 * 6);
 
         SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
