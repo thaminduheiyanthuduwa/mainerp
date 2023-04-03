@@ -1,7 +1,9 @@
 package com.kiu.mainerp.mainerp.service;
 
 import com.kiu.mainerp.mainerp.response.ResponseList;
+import org.springframework.core.io.Resource;
 
+import java.io.IOException;
 import java.text.ParseException;
 
 public interface AttendanceManager {
@@ -11,5 +13,7 @@ public interface AttendanceManager {
     ResponseList getMyYesterdayAttendance() throws ParseException;
 
     ResponseList createAutoAttendance() throws ParseException;
+
+    Resource getFileAsResource(String fileCode) throws IOException;
 
 }

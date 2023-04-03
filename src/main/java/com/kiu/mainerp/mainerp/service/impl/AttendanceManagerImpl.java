@@ -6,14 +6,25 @@ import com.kiu.mainerp.mainerp.response.AttendanceObject;
 import com.kiu.mainerp.mainerp.response.ResponseList;
 import com.kiu.mainerp.mainerp.service.AttendanceManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 @Service
 public class AttendanceManagerImpl implements AttendanceManager {
 
@@ -92,6 +103,26 @@ public class AttendanceManagerImpl implements AttendanceManager {
 
     @Override
     public ResponseList createAutoAttendance() throws ParseException {
+        return null;
+    }
+
+    private Path foundFile;
+    @Override
+    public Resource getFileAsResource(String fileCode) throws IOException {
+
+        Path dirPath = Paths.get("/KIU");
+
+        Files.list(dirPath).forEach(file -> {
+            if (file.getFileName().toString().startsWith(fileCode)) {
+                foundFile = file;
+                return;
+            }
+        });
+
+        if (foundFile != null) {
+            return new UrlResource(foundFile.toUri());
+        }
+
         return null;
     }
 
