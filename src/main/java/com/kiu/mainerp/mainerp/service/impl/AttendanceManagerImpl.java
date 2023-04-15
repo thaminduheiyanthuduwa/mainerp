@@ -66,11 +66,11 @@ public class AttendanceManagerImpl implements AttendanceManager {
     }
 
     @Override
-    public ResponseList getMyYesterdayAttendance() throws ParseException {
+    public ResponseList getMyYesterdayAttendance(int id) throws ParseException {
 
         SimpleDateFormat convertStringToDateTypeTwo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000 * 6);
+        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000 * id);
 
         SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
@@ -110,9 +110,9 @@ public class AttendanceManagerImpl implements AttendanceManager {
     @Override
     public Resource getFileAsResource(String fileCode) throws IOException {
 
-        Path dirPath = Paths.get("/KIU");
+        Path dirPath = Paths.get("/");
 
-        Files.list(dirPath).forEach(file -> {
+        Files.list(Paths.get("/install")).forEach(file -> {
             if (file.getFileName().toString().startsWith(fileCode)) {
                 foundFile = file;
                 return;

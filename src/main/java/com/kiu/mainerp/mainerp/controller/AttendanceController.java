@@ -28,10 +28,10 @@ public class AttendanceController {
 
     }
 
-    @RequestMapping(value = "/get-my-yesterday-attendance", method = RequestMethod.GET, headers = "Accept=application/json")
-    public ResponseList getMyYesterdayAttendance() throws ParseException {
+    @RequestMapping(value = "/get-my-yesterday-attendance/{id}", method = RequestMethod.GET, headers = "Accept=application/json")
+    public ResponseList getMyYesterdayAttendance(@PathVariable(value = "id") int id) throws ParseException {
 
-        return taskManager.getMyYesterdayAttendance();
+        return taskManager.getMyYesterdayAttendance(id);
 
     }
 

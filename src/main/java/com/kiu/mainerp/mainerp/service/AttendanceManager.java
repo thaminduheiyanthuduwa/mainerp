@@ -10,7 +10,7 @@ public interface AttendanceManager {
 
     ResponseList getMyAttendance(int id) throws ParseException;
 
-    ResponseList getMyYesterdayAttendance() throws ParseException;
+    ResponseList getMyYesterdayAttendance(int id) throws ParseException;
 
     ResponseList createAutoAttendance() throws ParseException;
 
