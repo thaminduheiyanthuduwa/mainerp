@@ -35,6 +35,14 @@ public class AttendanceController {
 
     }
 
+    @RequestMapping(value = "/get-my-yesterday-attendance-for-emp/{id}/{emp}", method = RequestMethod.GET, headers = "Accept=application/json")
+    public ResponseList getMyYesterdayAttendance(@PathVariable(value = "id") int id,
+                                                 @PathVariable(value = "emp") int user) throws ParseException {
+
+        return taskManager.getMyYesterdayAttendanceForEmp(id, user);
+
+    }
+
     @RequestMapping(value = "/create-auto-attendance", method = RequestMethod.GET, headers = "Accept=application/json")
     public ResponseList createAutoAttendance() throws ParseException {
 

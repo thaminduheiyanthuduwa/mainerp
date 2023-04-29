@@ -12,6 +12,8 @@ public interface AttendanceManager {
 
     ResponseList getMyYesterdayAttendance(int id) throws ParseException;
 
+    ResponseList getMyYesterdayAttendanceForEmp(int id, int user) throws ParseException;
+
     ResponseList createAutoAttendance() throws ParseException;
 
     Resource getFileAsResource(String fileCode) throws IOException;

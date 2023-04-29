@@ -17,6 +17,12 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             value = "select * from hr_attendance where created_at > :date")
     List<AttendanceEntity> getAttendanceAfterDate(@Param("date") String date);
 
+    @Query(nativeQuery = true,
+            value = "select * from hr_attendance where created_at > :date and employee_id = :emp")
+    List<AttendanceEntity> getAttendanceAfterDateForEmp(@Param("date") String date, @Param("emp") Integer emp);
+
+
+
     List<AttendanceEntity> findByEmployeeIdOrderByIdDesc(@Param("employeeId") int id);
 
     @Query(value = "select * from (select UUID() as unique_id, id, name_in_full, category, type, IFNULL(amount, 0) from(select * from (select pe.id, 2 as type_id,'Allowances' as category, pe.name_in_full, hca.name as type,  hra.amount   from people pe\n" +

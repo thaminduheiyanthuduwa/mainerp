@@ -16,6 +16,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +79,46 @@ public class AttendanceManagerImpl implements AttendanceManager {
         SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
 
         List<AttendanceEntity> data = attendanceRepository.getAttendanceAfterDate(convertDateToDateOnly.format(date));
+
+        List<AttendanceObject> attendanceEntities = new ArrayList<>();
+
+        for (AttendanceEntity obj : data) {
+            if (convertDateToDateOnly.format(date).equalsIgnoreCase(convertDateToDateOnly.format(obj.getDateTime()))){
+                AttendanceObject attendanceObject = new AttendanceObject();
+                attendanceObject.setId(obj.getId());
+                attendanceObject.setEmployeeId(obj.getEmployeeId());
+                attendanceObject.setDateTime(obj.getDateTime());
+                attendanceObject.setDateTimeText(convertDateToTimeOnly.format(obj.getDateTime()));
+                attendanceObject.setCreatedAt(obj.getCreatedAt());
+                attendanceObject.setDateTimeFullText(convertStringToDateTypeTwo.format(obj.getDateTime()));
+                attendanceObject.setCreatedAtFullText(convertStringToDateTypeTwo.format(obj.getCreatedAt()));
+                attendanceEntities.add(attendanceObject);
+            }
+        }
+
+
+        ResponseList responseList = new ResponseList();
+        responseList.setCode(200);
+        responseList.setMsg("Attendance data find by id");
+        responseList.setData(attendanceEntities);
+        return responseList;
+    }
+
+
+    @Override
+    public ResponseList getMyYesterdayAttendanceForEmp(int id, int user) throws ParseException {
+
+        SimpleDateFormat convertStringToDateTypeTwo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        LocalDate today = LocalDate.now();
+        LocalDate fiftyDaysAgo = today.minus(id, ChronoUnit.DAYS);
+        Date date = Date.from(fiftyDaysAgo.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+//        Date date = new Date (System.currentTimeMillis() - 24 * 60 * 60 * 1000 * id);
+
+        SimpleDateFormat convertDateToDateOnly=new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat convertDateToTimeOnly=new SimpleDateFormat("HH:mm:ss");
+
+        List<AttendanceEntity> data = attendanceRepository.getAttendanceAfterDateForEmp(convertDateToDateOnly.format(date), user);
 
         List<AttendanceObject> attendanceEntities = new ArrayList<>();
 
