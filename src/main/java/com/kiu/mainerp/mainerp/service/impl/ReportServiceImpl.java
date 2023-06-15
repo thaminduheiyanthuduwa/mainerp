@@ -30,18 +30,18 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ResponseList getIncomeData() throws ParseException {
+    public ResponseList getIncomeData(String startDate, String endDate) throws ParseException {
         ResponseList responseList = new ResponseList();
-        List<Map<String, Object>> allIncome = attendanceRepository.gettinIncomeInfo();
+        List<Map<String, Object>> allIncome = attendanceRepository.gettingIncomeInfo(startDate, endDate);
         responseList.setCode(200);
         responseList.setData(allIncome);
         return responseList;
     }
 
     @Override
-    public ResponseList getAll() throws ParseException {
+    public ResponseList getOutstandingData(String date) throws ParseException {
         ResponseList responseList = new ResponseList();
-        List<Map<String, Object>> all = attendanceRepository.allInfo();
+        List<Map<String, Object>> all = attendanceRepository.getAllOutstandingData(date);
         responseList.setCode(200);
         responseList.setData(all);
         return responseList;
@@ -50,7 +50,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ResponseList getAllIncomeDataPaginated(int offSet, int pageSize) throws ParseException {
         ResponseList responseList = new ResponseList();
-        Page<Map<String, Object>> incomePaginated = attendanceRepository.gettingIncomeInfoPageination(PageRequest.of(offSet, pageSize));
+        Page<Map<String, Object>> incomePaginated = attendanceRepository.gettingIncomeInfoPagination(PageRequest.of(offSet, pageSize));
         responseList.setCode(200);
         responseList.setData(incomePaginated);
         return responseList;

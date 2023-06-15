@@ -1,6 +1,5 @@
 package com.kiu.mainerp.mainerp.entity;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.persistence.GeneratedValue;
 import lombok.*;

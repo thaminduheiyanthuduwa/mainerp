@@ -6,7 +6,7 @@ import java.text.ParseException;
 
 public interface ReportService {
     ResponseList getAllData(int offSet, int pageSize) throws ParseException;
-    ResponseList getAll() throws ParseException;
-    ResponseList getIncomeData() throws ParseException;
+    ResponseList getOutstandingData(String date) throws ParseException;
+    ResponseList getIncomeData(String startDate, String endDate) throws ParseException;
     ResponseList getAllIncomeDataPaginated(int offSet,int pageSize) throws  ParseException;
 }

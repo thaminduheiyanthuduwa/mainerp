@@ -68,9 +68,28 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "JOIN batch_types as BT ON BS.batch_type = BT.id\n" +
             "JOIN batches B ON FSPPC.batch_id = B.batch_id\n" +
             "JOIN finance_student_fee_definitions FSFD ON FSPS.fee_definition_id = FSFD.id\n" +
-            "WHERE FSPPC.status = 'APPROVED' and FSPS.status <> 'PAID' and FSPS.due_date <= '2023-06-16'\n" +
+            "WHERE FSPPC.status = 'APPROVED' and FSPS.status <> 'PAID' and FSPS.due_date <= :date\n" +
             "ORDER BY `FSPS`.`status`  DESC;\n", nativeQuery = true)
-    List<Map<String,Object>> allInfo();
+    List<Map<String,Object>> getAllOutstandingData(@Param("date") String date);
+
+    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description,\n" +
+            "fsp.plan_type, fs.amount,  fs.currency, fs.total_paid, fs.status, fs.installment_counter,\n" +
+            "bt.description\n" +
+            "FROM finance_student_payment_schedules fs\n" +
+            "LEFT JOIN finance_student_fee_definitions fee ON fs.fee_definition_id = fee.id\n" +
+            "LEFT JOIN finance_student_payment_plan_cards fsp ON fsp.id =  fs.payment_plan_card_id\n" +
+            "LEFT JOIN students si ON si.student_id = fsp.student_id\n" +
+            "LEFT JOIN finance_student_fee_definitions fsf ON fsf.fee_definition_id = fs.fee_definition_id\n" +
+            "LEFT JOIN finance_batch_fee_types fbft ON fee.fee_definition_id = fbft.id\n" +
+            "LEFT JOIN finance_common_fee_definition fcfd ON fcfd.id = fbft.common_fee_id\n" +
+            "LEFT JOIN finance_batch_payment_plan_types fbp ON fbp.id = fsf.payment_plan_types_id\n" +
+            "LEFT JOIN batches ba ON fsp.batch_id = ba.batch_id  \n" +
+            "LEFT JOIN batch_student bss ON bss.student_id = si.student_old_id\n" +
+            "LEFT JOIN batch_types bt ON bt.id = bss.batch_type\n" +
+            "WHERE fs.due_date >= :startDate and fs.due_date <= :endDate and bt.id <> 5\n" +
+            "ORDER BY `fs`.`due_date`  DESC;\n",nativeQuery = true)
+    List<Map<String,Object>> gettingIncomeInfo(@Param("startDate") String startDate,
+                                               @Param("endDate") String endDate);
 
     @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description,\n" +
             "fsp.plan_type, fs.amount,  fs.currency, fs.total_paid, fs.status, fs.installment_counter,\n" +
@@ -88,23 +107,5 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "LEFT JOIN batch_types bt ON bt.id = bss.batch_type\n" +
             "WHERE fs.due_date >= '2023-04-01' and fs.due_date < '2023-05-01' and bt.id <> 5\n" +
             "ORDER BY `fs`.`due_date`  DESC;\n",nativeQuery = true)
-    List<Map<String,Object>> gettinIncomeInfo();
-
-    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description,\n" +
-            "fsp.plan_type, fs.amount,  fs.currency, fs.total_paid, fs.status, fs.installment_counter,\n" +
-            "bt.description\n" +
-            "FROM finance_student_payment_schedules fs\n" +
-            "LEFT JOIN finance_student_fee_definitions fee ON fs.fee_definition_id = fee.id\n" +
-            "LEFT JOIN finance_student_payment_plan_cards fsp ON fsp.id =  fs.payment_plan_card_id\n" +
-            "LEFT JOIN students si ON si.student_id = fsp.student_id\n" +
-            "LEFT JOIN finance_student_fee_definitions fsf ON fsf.fee_definition_id = fs.fee_definition_id\n" +
-            "LEFT JOIN finance_batch_fee_types fbft ON fee.fee_definition_id = fbft.id\n" +
-            "LEFT JOIN finance_common_fee_definition fcfd ON fcfd.id = fbft.common_fee_id\n" +
-            "LEFT JOIN finance_batch_payment_plan_types fbp ON fbp.id = fsf.payment_plan_types_id\n" +
-            "LEFT JOIN batches ba ON fsp.batch_id = ba.batch_id  \n" +
-            "LEFT JOIN batch_student bss ON bss.student_id = si.student_old_id\n" +
-            "LEFT JOIN batch_types bt ON bt.id = bss.batch_type\n" +
-            "WHERE fs.due_date >= '2023-04-01' and fs.due_date < '2023-05-01' and bt.id <> 5\n" +
-            "ORDER BY `fs`.`due_date`  DESC;\n",nativeQuery = true)
-    Page<Map<String, Object>> gettingIncomeInfoPageination(Pageable pageable);
+    Page<Map<String, Object>> gettingIncomeInfoPagination(Pageable pageable);
 }

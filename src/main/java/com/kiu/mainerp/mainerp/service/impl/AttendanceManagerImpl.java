@@ -22,12 +22,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.springframework.core.io.Resource;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 @Service
 public class AttendanceManagerImpl implements AttendanceManager {
 

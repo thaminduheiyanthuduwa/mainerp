@@ -17,13 +17,13 @@ public class ReportController {
     public ResponseList getAllPageination(@PathVariable int offSet, @PathVariable int pageSize) throws ParseException {
         return  reportService.getAllData(offSet,pageSize);
     }
-    @GetMapping("/all")
-    public ResponseList getAll() throws  ParseException{
-        return  reportService.getAll();
+    @GetMapping("/outstanding-data/{date}")
+    public ResponseList getAll(@PathVariable String date) throws  ParseException{
+        return  reportService.getOutstandingData(date);
     }
-    @GetMapping("/get-income")
-    public ResponseList getAllIncomeData() throws  ParseException{
-        return  reportService.getIncomeData();
+    @GetMapping("/get-income/{startDate}/{endDate}")
+    public ResponseList getAllIncomeData(@PathVariable String startDate, @PathVariable String endDate) throws  ParseException{
+        return  reportService.getIncomeData(startDate, endDate);
     }
     @GetMapping("/get-income/{offSet}/{pageSize}")
     public ResponseList getIncomePaginated(@PathVariable int offSet,@PathVariable int pageSize) throws  ParseException{
