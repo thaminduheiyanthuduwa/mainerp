@@ -14,7 +14,7 @@ public class ReportController {
     @Autowired
     private ReportServiceImpl reportService;
     @GetMapping("/get-all/{offSet}/{pageSize}")
-    public ResponseList getAllPageination(@PathVariable int offSet, @PathVariable int pageSize) throws ParseException {
+    public ResponseList getAllPagination(@PathVariable int offSet, @PathVariable int pageSize) throws ParseException {
         return  reportService.getAllData(offSet,pageSize);
     }
     @GetMapping("/outstanding-data/{date}")
@@ -25,7 +25,7 @@ public class ReportController {
     public ResponseList getAllIncomeData(@PathVariable String startDate, @PathVariable String endDate) throws  ParseException{
         return  reportService.getIncomeData(startDate, endDate);
     }
-    @GetMapping("/get-income/{offSet}/{pageSize}")
+    @GetMapping("/get-income-pagination/{offSet}/{pageSize}")
     public ResponseList getIncomePaginated(@PathVariable int offSet,@PathVariable int pageSize) throws  ParseException{
         return reportService.getAllIncomeDataPaginated( offSet,pageSize);
     }
