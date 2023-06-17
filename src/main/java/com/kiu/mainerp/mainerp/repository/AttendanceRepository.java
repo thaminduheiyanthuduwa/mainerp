@@ -72,7 +72,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "ORDER BY `FSPS`.`status`  DESC;\n", nativeQuery = true)
     List<Map<String,Object>> getAllOutstandingData(@Param("date") String date);
 
-    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description,\n" +
+    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description as type,\n" +
             "fsp.plan_type, fs.amount,  fs.currency, fs.total_paid, fs.status, fs.installment_counter,\n" +
             "bt.description\n" +
             "FROM finance_student_payment_schedules fs\n" +
