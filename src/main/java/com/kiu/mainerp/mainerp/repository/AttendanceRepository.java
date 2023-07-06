@@ -72,7 +72,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "ORDER BY `FSPS`.`status`  DESC;\n", nativeQuery = true)
     List<Map<String,Object>> getAllOutstandingData(@Param("date") String date);
 
-    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description,\n" +
+    @Query(value = "SELECT distinct si.full_name,  si.range_id as student_id, ba.batch_name, fs.due_date, fcfd.description as type,\n" +
             "fsp.plan_type, fs.amount,  fs.currency, fs.total_paid, fs.status, fs.installment_counter,\n" +
             "bt.description\n" +
             "FROM finance_student_payment_schedules fs\n" +
@@ -86,7 +86,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "LEFT JOIN batches ba ON fsp.batch_id = ba.batch_id  \n" +
             "LEFT JOIN batch_student bss ON bss.student_id = si.student_old_id\n" +
             "LEFT JOIN batch_types bt ON bt.id = bss.batch_type\n" +
-            "WHERE fs.due_date >= :startDate and fs.due_date <= :endDate and bt.id <> 5\n" +
+            "WHERE fs.due_date >= :startDate and fs.due_date <= :endDate and bt.id <> 5 and fsp.status <> 'CANCELED'\n" +
             "ORDER BY `fs`.`due_date`  DESC;\n",nativeQuery = true)
     List<Map<String,Object>> gettingIncomeInfo(@Param("startDate") String startDate,
                                                @Param("endDate") String endDate);
