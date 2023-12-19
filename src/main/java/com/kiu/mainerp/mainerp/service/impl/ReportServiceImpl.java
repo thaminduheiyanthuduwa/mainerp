@@ -55,4 +55,22 @@ public class ReportServiceImpl implements ReportService {
         responseList.setData(incomePaginated);
         return responseList;
     }
+
+    @Override
+    public ResponseList getDueReports() throws ParseException {
+        ResponseList responseList = new ResponseList();
+        List<Map<String, Object>> fetchDueReports = attendanceRepository.fetchDueReports();
+        responseList.setCode(200);
+        responseList.setData(fetchDueReports);
+        return responseList;
+    }
+
+    @Override
+    public ResponseList getStudentsWithoutPaymentCards() throws ParseException {
+        ResponseList responseList = new ResponseList();
+        List<Map<String, Object>> getStudentsWithoutPaymentCards = attendanceRepository.getStudentsWithoutPaymentCards();
+        responseList.setCode(200);
+        responseList.setData(getStudentsWithoutPaymentCards);
+        return responseList;
+    }
 }

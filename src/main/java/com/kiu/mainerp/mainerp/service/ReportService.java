@@ -9,4 +9,6 @@ public interface ReportService {
     ResponseList getAll() throws ParseException;
     ResponseList getIncomeData() throws ParseException;
     ResponseList getAllIncomeDataPaginated(int offSet,int pageSize) throws  ParseException;
+    ResponseList getDueReports() throws ParseException;
+    ResponseList getStudentsWithoutPaymentCards()throws ParseException;
 }
