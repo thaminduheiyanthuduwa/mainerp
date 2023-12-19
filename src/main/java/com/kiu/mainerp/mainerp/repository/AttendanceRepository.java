@@ -134,7 +134,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "        GROUP BY\n" +
             "            s.range_id, ba.batch_name, admission_number, s.full_name\n" +
             "        HAVING \n" +
-            "        \t MIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL 45 DAY)\n" +
+            "        \t MIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL :dateRange  DAY)\n" +
             "            AND MIN(fs.due_date) <= CURDATE()) obj1\n" +
             "            LEFT JOIN (\n" +
             "\n" +
@@ -156,7 +156,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "    GROUP BY\n" +
             "        fs.payment_plan_card_id \n" +
             "    HAVING \n" +
-            "    \tMIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL 45 DAY)\n" +
+            "    \tMIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL :dateRange DAY)\n" +
             "            AND MIN(fs.due_date) <= CURDATE()\n" +
             ") AS latest_payment ON fc.id = latest_payment.payment_plan_card_id\n" +
             "LEFT JOIN finance_student_payment_schedules fs ON fc.id = fs.payment_plan_card_id AND latest_payment.updated_at = fs.updated_at\n" +
@@ -166,7 +166,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "\n" +
             "                ) obj2 ON obj2.student_id = obj1.admission_number  \n" +
             "ORDER BY `no_of_days_outstanding` ASC",nativeQuery = true)
-    List<Map<String,Object>> fetchDueReports();
+    List<Map<String,Object>> fetchDueReports(Integer dateRange);
     @Query(value = "SELECT s.full_name, s.range_id, c.course_name,ba.batch_name,  IF(s.reg_date IS NULL, NULL, YEAR(s.reg_date)) as reg_date " +
             "FROM students s\n" +
             "LEFT JOIN finance_student_payment_plan_cards fs ON s.student_id = fs.student_id\n" +

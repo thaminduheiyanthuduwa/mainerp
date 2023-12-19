@@ -29,9 +29,9 @@ public class ReportController {
     public ResponseList getIncomePaginated(@PathVariable int offSet,@PathVariable int pageSize) throws  ParseException{
         return reportService.getAllIncomeDataPaginated( offSet,pageSize);
     }
-    @GetMapping("/get-due-reports")
-    public ResponseList getDueReports() throws  ParseException{
-        return reportService.getDueReports();
+    @GetMapping("/get-due-reports/{dateRange}")
+    public ResponseList getDueReports(@PathVariable Integer dateRange) throws  ParseException{
+        return reportService.getDueReports(dateRange);
     }
     @GetMapping("/get-due-without-payment-cards")
     public ResponseList getStudentsWithoutPaymentCards() throws  ParseException{

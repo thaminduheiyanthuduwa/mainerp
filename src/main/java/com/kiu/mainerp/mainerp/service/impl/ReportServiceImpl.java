@@ -57,9 +57,9 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ResponseList getDueReports() throws ParseException {
+    public ResponseList getDueReports(Integer dateRange) throws ParseException {
         ResponseList responseList = new ResponseList();
-        List<Map<String, Object>> fetchDueReports = attendanceRepository.fetchDueReports();
+        List<Map<String, Object>> fetchDueReports = attendanceRepository.fetchDueReports(dateRange);
         responseList.setCode(200);
         responseList.setData(fetchDueReports);
         return responseList;
