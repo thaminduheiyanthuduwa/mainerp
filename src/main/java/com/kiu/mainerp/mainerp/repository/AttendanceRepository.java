@@ -175,4 +175,30 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
             "WHERE s.status = 1 AND fs.id IS NULL;",nativeQuery = true)
     List<Map<String,Object>>getStudentsWithoutPaymentCards();
+    @Query(value = "SELECT\n" +
+            "    std.range_id AS student_id,\n" +
+            "    std.name_initials,\n" +
+            "    IF(std.reg_date IS NULL, NULL, YEAR(std.reg_date)) as registered_date,\n" +
+            "    fsfd.installment_type,\n" +
+            "    fsps.installment_counter,\n" +
+            "    fsps.amount as due_amount,\n" +
+            "    b.batch_name,\n" +
+            "    fsps.due_date,\n" +
+            "    fsppc.status\n" +
+            "FROM\n" +
+            "    finance_student_payment_plan_cards AS fsppc\n" +
+            "        LEFT JOIN students AS std ON std.student_id = fsppc.student_id\n" +
+            "        LEFT JOIN finance_student_fee_definitions fsfd ON fsppc.id = fsfd.payment_plan_card_id\n" +
+            "        LEFT JOIN finance_student_payment_schedules fsps ON fsfd.id = fsps.fee_definition_id\n" +
+            "        LEFT JOIN batch_student AS bs ON bs.student_inc_id = fsppc.student_id\n" +
+            "        LEFT JOIN batches AS b ON b.batch_id = bs.batch_id\n" +
+            "        LEFT JOIN courses AS c ON c.course_id = b.course_id\n" +
+            "        LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
+            "WHERE\n" +
+            "      fsps.status NOT IN ('PAID')\n"+
+            "AND\n"+
+           " fsps.due_date >= :startDate and  fsps.due_date <= :endDate"
+            ,
+            nativeQuery = true)
+    List<Map<String,Object>> outStandingReport(String startDate,String endDate);
 }

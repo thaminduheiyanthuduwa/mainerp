@@ -11,4 +11,5 @@ public interface ReportService {
     ResponseList getAllIncomeDataPaginated(int offSet,int pageSize) throws  ParseException;
     ResponseList getDueReports(Integer dateRange) throws ParseException;
     ResponseList getStudentsWithoutPaymentCards()throws ParseException;
+    ResponseList getOutStandingReport(String startDate,String endDate)throws  ParseException;
 }

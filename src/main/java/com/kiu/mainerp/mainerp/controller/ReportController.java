@@ -37,4 +37,8 @@ public class ReportController {
     public ResponseList getStudentsWithoutPaymentCards() throws  ParseException{
         return reportService.getStudentsWithoutPaymentCards();
     }
+    @GetMapping("/get-out-standing-report/{startDate}/{endDate}")
+   public ResponseList getOutStandingReport(@PathVariable String startDate,@PathVariable String endDate) throws ParseException{
+        return reportService.getOutStandingReport(startDate,endDate);
+   }
 }
