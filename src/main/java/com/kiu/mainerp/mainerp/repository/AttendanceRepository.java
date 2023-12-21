@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -167,7 +168,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "                ) obj2 ON obj2.student_id = obj1.admission_number  \n" +
             "ORDER BY `no_of_days_outstanding` ASC",nativeQuery = true)
     List<Map<String,Object>> fetchDueReports(Integer dateRange);
-    @Query(value = "SELECT s.full_name, s.range_id, c.course_name,ba.batch_name,  IF(s.reg_date IS NULL, NULL, YEAR(s.reg_date)) as reg_date " +
+    @Query(value = "SELECT s.full_name, s.range_id, c.course_name,ba.batch_name,  IF(s.reg_date IS NULL, NULL, s.reg_date) as reg_date " +
             "FROM students s\n" +
             "LEFT JOIN finance_student_payment_plan_cards fs ON s.student_id = fs.student_id\n" +
             "LEFT JOIN batch_student bs ON bs.student_id = s.range_id\n" +
@@ -178,7 +179,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
     @Query(value = "SELECT\n" +
             "    std.range_id AS student_id,\n" +
             "    std.name_initials,\n" +
-            "    IF(std.reg_date IS NULL, NULL, YEAR(std.reg_date)) as registered_date,\n" +
+            "    IF(std.reg_date IS NULL, NULL, std.reg_date) as registered_date,\n" +
             "    fsfd.installment_type,\n" +
             "    fsps.installment_counter,\n" +
             "    fsps.amount as due_amount,\n" +
@@ -201,4 +202,17 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             ,
             nativeQuery = true)
     List<Map<String,Object>> outStandingReport(String startDate,String endDate);
+    @Query(value = "select\n" +
+            "    fsppc.id,\n" +
+            "    fsppc.student_id,\n" +
+            "    op.amount as due_amount,\n" +
+            "    op.status,\n" +
+            "    IF(op.due_date = '0000-00-00', NULL, op.due_date) as due_date,\n" +
+            "    cm.name\n" +
+            "from finance_student_payment_plan_cards as fsppc\n" +
+            "         left join finance_student_other_payments as op on fsppc.id=op.payment_plan_card_id\n" +
+            "         left join finance_common_other_payments as cm on op.common_payment_id=cm.id\n" +
+            "where op.status NOT IN ('PAID')"
+            ,nativeQuery = true)
+    List<Map<String,Object>>outStandingOtherPaymentReport();
 }

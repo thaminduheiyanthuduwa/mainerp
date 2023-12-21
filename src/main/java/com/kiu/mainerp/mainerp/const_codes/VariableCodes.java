@@ -10,6 +10,10 @@ public class VariableCodes {
     public static final String NAME_INITIAL="name_initials";
     public static final String REGISTERED_DATE="registered_date";
     public static final String STUDENT_ID="student_id";
+    public static final String ID="id";
+    public static final String AMOUNT="amount";
+    public static final String NAME="name";
+
 
 
 

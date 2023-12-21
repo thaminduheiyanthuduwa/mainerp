@@ -1,4 +1,4 @@
-package com.kiu.mainerp.mainerp.models;
+package com.kiu.mainerp.mainerp.models.out_standing;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

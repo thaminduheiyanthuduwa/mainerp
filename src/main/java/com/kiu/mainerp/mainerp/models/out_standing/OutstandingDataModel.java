@@ -1,4 +1,4 @@
-package com.kiu.mainerp.mainerp.models;
+package com.kiu.mainerp.mainerp.models.out_standing;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -20,7 +20,7 @@ public class OutstandingDataModel {
     @JsonProperty("name_initials")
     private String nameInitials;
     @JsonProperty("registered_date")
-    private Long registeredDate;
+    private Date registeredDate;
     @JsonProperty("installment_type")
     private String installmentType;
     @JsonProperty("student_id")

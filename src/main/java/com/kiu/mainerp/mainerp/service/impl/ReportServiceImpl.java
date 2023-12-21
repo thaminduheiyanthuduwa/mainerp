@@ -2,8 +2,10 @@ package com.kiu.mainerp.mainerp.service.impl;
 
 
 import com.kiu.mainerp.mainerp.const_codes.VariableCodes;
-import com.kiu.mainerp.mainerp.models.OutstandingDataModel;
-import com.kiu.mainerp.mainerp.models.OutstandingResponseModel;
+import com.kiu.mainerp.mainerp.models.out_standing.OutstandingDataModel;
+import com.kiu.mainerp.mainerp.models.out_standing.OutstandingResponseModel;
+import com.kiu.mainerp.mainerp.models.out_standing_other_payments.OutStandingOtherPaymentDataModel;
+import com.kiu.mainerp.mainerp.models.out_standing_other_payments.OutStandingOtherPaymentResponseModel;
 import com.kiu.mainerp.mainerp.repository.AttendanceRepository;
 import com.kiu.mainerp.mainerp.response.ResponseList;
 import com.kiu.mainerp.mainerp.service.ReportService;
@@ -12,7 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -96,7 +100,7 @@ public class ReportServiceImpl implements ReportService {
             outstandingDataModel.setDueDate((Date) items.get(VariableCodes.DUE_DATE));
             outstandingDataModel.setNameInitials((String) items.get(VariableCodes.NAME_INITIAL));
             outstandingDataModel.setDueAmount(dueAmount);
-            outstandingDataModel.setRegisteredDate((Long)items.get(VariableCodes.REGISTERED_DATE));
+            outstandingDataModel.setRegisteredDate((Date)items.get(VariableCodes.REGISTERED_DATE));
             outstandingDataModel.setInstallmentType(installmentType);
             outstandingDataModel.setStudentId((Integer) items.get(VariableCodes.STUDENT_ID));
             outstandingDataModel.setInstallmentCounter(installmentCount);
@@ -106,6 +110,8 @@ public class ReportServiceImpl implements ReportService {
         }
         outstandingResponseModel.setTotalDueAmount(amount);
         outstandingResponseModel.setDataList(outstandingList);
+        responseList.setCode(200);
+        responseList.setMsg("Successfully!");
         responseList.setData(outstandingResponseModel);
         return responseList;
     }
@@ -113,4 +119,40 @@ public class ReportServiceImpl implements ReportService {
         return type+" "+count;
     }
 
+    @Override
+    public ResponseList getOtherPaymentOutStandingReport(String startDate, String endDate) throws ParseException {
+      ResponseList responseList=new ResponseList();
+        OutStandingOtherPaymentResponseModel outStandingOtherPaymentResponseModel=new OutStandingOtherPaymentResponseModel();
+      List<Map<String,Object>> filterStartDateAndEndDate=new ArrayList<>();
+      List<OutStandingOtherPaymentDataModel> outStandingOtherPaymentDataModels=new ArrayList<>();
+      Double dueAmount=0.0;
+       List<Map<String,Object>>otherPaymentOutStandingReport=attendanceRepository.outStandingOtherPaymentReport();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date startDateParsed = dateFormat.parse(startDate);
+        Date endDateParsed = dateFormat.parse(endDate);
+        for (Map<String,Object> items:otherPaymentOutStandingReport) {
+            Date dueDate = (Date) items.get(VariableCodes.DUE_DATE);
+            if (dueDate != null && !dueDate.before(startDateParsed) && !dueDate.after(endDateParsed)) {
+                filterStartDateAndEndDate.add(items);
+            }
+        }
+        for (Map<String,Object> items:filterStartDateAndEndDate) {
+            OutStandingOtherPaymentDataModel outStandingOtherPaymentDataModel=new OutStandingOtherPaymentDataModel();
+            Double amount=(Double) items.get(VariableCodes.DUE_AMOUNT);
+            outStandingOtherPaymentDataModel.setId((Long) items.get(VariableCodes.ID));
+            outStandingOtherPaymentDataModel.setStatus((String) items.get(VariableCodes.STATUS));
+            outStandingOtherPaymentDataModel.setAmount(amount);
+            outStandingOtherPaymentDataModel.setDueDate((Date) items.get(VariableCodes.DUE_DATE));
+            outStandingOtherPaymentDataModel.setName((String) items.get(VariableCodes.NAME));
+            outStandingOtherPaymentDataModels.add(outStandingOtherPaymentDataModel);
+            dueAmount+=amount;
+        }
+
+        outStandingOtherPaymentResponseModel.setTotalDueAmount(BigDecimal.valueOf(dueAmount).toPlainString());
+        outStandingOtherPaymentResponseModel.setDataList(outStandingOtherPaymentDataModels);
+        responseList.setCode(200);
+        responseList.setMsg("Successfully!");
+        responseList.setData(outStandingOtherPaymentResponseModel);
+        return responseList;
+    }
 }
