@@ -45,4 +45,8 @@ public class ReportController {
    public ResponseList getOtherPaymentOutStandingReport(@PathVariable String startDate,@PathVariable String endDate) throws ParseException{
         return reportService.getOtherPaymentOutStandingReport(startDate,endDate);
    }
+   @GetMapping("/get-student-payment-plan-cards/{startDate}/{endDate}")
+   public ResponseList getStudentPaymentPlanCards(@PathVariable String startDate,@PathVariable String endDate) throws ParseException{
+        return reportService.getStudentPaymentPlanCards(startDate,endDate);
+   }
 }

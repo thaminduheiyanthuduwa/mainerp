@@ -14,4 +14,5 @@ public interface ReportService {
     ResponseList getStudentsWithoutPaymentCards()throws ParseException;
     ResponseList getOutStandingReport(String startDate,String endDate)throws  ParseException;
     ResponseList getOtherPaymentOutStandingReport(String startDate, String endDate)throws  ParseException;
+    ResponseList getStudentPaymentPlanCards(String startDate,String endDate)throws ParseException;
 }

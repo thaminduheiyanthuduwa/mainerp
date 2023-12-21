@@ -215,4 +215,39 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "where op.status NOT IN ('PAID')"
             ,nativeQuery = true)
     List<Map<String,Object>>outStandingOtherPaymentReport();
+    @Query(value = "SELECT\n" +
+            "    std.range_id AS student_id,\n" +
+            "    std.name_initials,\n" +
+            "     NULLIF(std.reg_date, '0000-00-00') as registered_date,\n" +
+            "    fsfd.installment_type,\n" +
+            "    fsps.installment_counter,\n" +
+            "\tfsfd.fee_amount,\n" +
+            "\tfsps.tax_paid,\n" +
+            "\tfsps.total_paid,\n" +
+            "\tfsps.total_late_payment_paid,\n" +
+            "    fsps.status as payment_status,\n" +
+            "     NULLIF(fsps.due_date, '0000-00-00') as due_date,\n" +
+            "    fsppc.status as payment_plan_cards_status,\n" +
+            "    b.batch_id,\n" +
+            "    b.batch_name,\n" +
+            "    c.course_id,\n" +
+            "    c.course_name,\n" +
+            "    d.dept_id,\n" +
+            "    d.dept_name,\n" +
+            "    f.faculty_id,\n" +
+            "    f.faculty_name\n" +
+            "FROM\n" +
+            "    finance_student_payment_plan_cards AS fsppc\n" +
+            "    LEFT JOIN students AS std ON std.student_id = fsppc.student_id\n" +
+            "    LEFT JOIN finance_student_fee_definitions fsfd ON fsppc.id = fsfd.payment_plan_card_id\n" +
+            "    LEFT JOIN finance_student_payment_schedules fsps ON fsfd.id = fsps.fee_definition_id\n" +
+            "    LEFT JOIN batch_student AS bs ON bs.student_inc_id = fsppc.student_id\n" +
+            "    LEFT JOIN batches AS b ON b.batch_id = bs.batch_id\n" +
+            "    LEFT JOIN courses AS c ON c.course_id = b.course_id\n" +
+            "    LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
+            "    LEFT JOIN departments AS d ON c.dept_id = d.dept_id\n" +
+            "    LEFT JOIN faculties AS f ON d.faculty_id = f.faculty_id\n" +
+            "WHERE\n" +
+            "    fsps.status NOT IN ('PAID')",nativeQuery = true)
+    List<Map<String,Object>>getStudentPaymentPlanCards();
 }

@@ -11,7 +11,7 @@ public class OutStandingOtherPaymentDataModel {
     private Long id;
     private String status;
     @JsonProperty("student_id")
-    private Integer studentId;
+    private Long studentId;
     private Double amount;
     @JsonProperty("due_date")
     private Date dueDate;

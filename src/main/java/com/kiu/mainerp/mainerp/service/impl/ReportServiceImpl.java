@@ -142,6 +142,7 @@ public class ReportServiceImpl implements ReportService {
             outStandingOtherPaymentDataModel.setId((Long) items.get(VariableCodes.ID));
             outStandingOtherPaymentDataModel.setStatus((String) items.get(VariableCodes.STATUS));
             outStandingOtherPaymentDataModel.setAmount(amount);
+            outStandingOtherPaymentDataModel.setStudentId((Long) items.get(VariableCodes.STUDENT_ID));
             outStandingOtherPaymentDataModel.setDueDate((Date) items.get(VariableCodes.DUE_DATE));
             outStandingOtherPaymentDataModel.setName((String) items.get(VariableCodes.NAME));
             outStandingOtherPaymentDataModels.add(outStandingOtherPaymentDataModel);
@@ -154,5 +155,32 @@ public class ReportServiceImpl implements ReportService {
         responseList.setMsg("Successfully!");
         responseList.setData(outStandingOtherPaymentResponseModel);
         return responseList;
+    }
+
+    @Override
+    public ResponseList getStudentPaymentPlanCards(String startDate,String endDate) throws ParseException {
+       ResponseList responseList=new ResponseList();
+       Double courseFee=0.0;
+       List<Map<String,Object>>getStudentPaymentPlanCards=attendanceRepository.getStudentPaymentPlanCards();
+        List<Map<String,Object>> filterStartDateAndEndDate=new ArrayList<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date startDateParsed = dateFormat.parse(startDate);
+        Date endDateParsed = dateFormat.parse(endDate);
+        for (Map<String,Object> items:getStudentPaymentPlanCards) {
+            Date dueDate = (Date) items.get(VariableCodes.DUE_DATE);
+            if (dueDate != null && !dueDate.before(startDateParsed) && !dueDate.after(endDateParsed)) {
+                filterStartDateAndEndDate.add(items);
+            }
+        }
+
+        for (Map<String,Object> items:filterStartDateAndEndDate) {
+            String installmentType=(String) items.get(VariableCodes.INSTALLMENT_TYPE);
+            if(installmentType.equals(VariableCodes.COURSE_FEE)){
+                //courseFee+=totalpaid;
+            }
+        }
+        responseList.setData(filterStartDateAndEndDate);
+return responseList;
+
     }
 }
