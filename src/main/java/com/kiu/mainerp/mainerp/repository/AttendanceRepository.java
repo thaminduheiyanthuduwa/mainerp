@@ -315,7 +315,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
     @Query(value = "SELECT\n" +
             "std.range_id AS student_id,\n" +
             "std.name_initials,fsppc.id,\n" +
-            "NULLIF(std.reg_date, '0000-00-00') as registered_date,\n" +
+            "CAST(NULLIF(std.reg_date, '0000-00-00') AS CHAR) AS registered_date,\n" +
             "fsfd.installment_type,\n" +
             "fsps.installment_counter,\n" +
             "IF(fsps.status='PAID',fsps.total_paid,((fsps.amount+fsps.tax_paid)-(fsps.total_paid-fsps.total_late_payment_paid))) as due_amount,\n" +
