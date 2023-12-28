@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 public class OutstandingResponseModel {
     @JsonProperty("data_list")
-private List<OutstandingDataModel> dataList;
-@JsonProperty("total_due_amount")
-private  Double totalDueAmount;
+    private List<OutStandingDataModel> dataList;
+    @JsonProperty("total_due_amount")
+    private  String totalDueAmount;
 }

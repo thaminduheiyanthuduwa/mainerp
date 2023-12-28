@@ -12,7 +12,10 @@ public interface ReportService {
     ResponseList getAllIncomeDataPaginated(int offSet,int pageSize) throws  ParseException;
     ResponseList getDueReports(Integer dateRange) throws ParseException;
     ResponseList getStudentsWithoutPaymentCards()throws ParseException;
-    ResponseList getOutStandingReport(String startDate,String endDate)throws  ParseException;
-    ResponseList getOtherPaymentOutStandingReport(String startDate, String endDate)throws  ParseException;
-    ResponseList getStudentPaymentPlanCards(String startDate,String endDate)throws ParseException;
+    ResponseList getOutStandingReport(String startDate)throws  ParseException;
+    ResponseList getOtherPaymentOutStandingReport(String startDate)throws  ParseException;
+    ResponseList getIncomeReport(String startDate,String endDate)throws ParseException;
+    ResponseList getIncomeReportOtherPayment(String startDate,String endDate)throws ParseException;
+    ResponseList getActiveToTemporaryDrop(String startDate,String endDate);
+    ResponseList getFullPaymentDetails();
 }
