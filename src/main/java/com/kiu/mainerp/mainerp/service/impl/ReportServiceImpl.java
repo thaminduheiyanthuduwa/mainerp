@@ -23,10 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ReportServiceImpl implements ReportService {
@@ -75,8 +72,13 @@ public class ReportServiceImpl implements ReportService {
     public ResponseList getDueReports(Integer dateRange) throws ParseException {
         ResponseList responseList = new ResponseList();
         List<Map<String, Object>> fetchDueReports = attendanceRepository.fetchDueReports(dateRange);
-        responseList.setCode(200);
-        responseList.setData(fetchDueReports);
+        if (fetchDueReports.isEmpty()) {
+            responseList.setCode(204);
+        } else {
+            responseList.setCode(200);
+            responseList.setData(fetchDueReports);
+        }
+
         return responseList;
     }
 
@@ -91,47 +93,48 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ResponseList getOutStandingReport(String startDate) throws ParseException {
-        ResponseList responseList=new ResponseList();
-        Double amount=0.0;
-        List<OutStandingDataModel> outstandingList=new ArrayList<>();
-        OutstandingResponseModel outstandingResponseModel=new OutstandingResponseModel();
+        ResponseList responseList = new ResponseList();
+        Double amount = 0.0;
+        List<OutStandingDataModel> outstandingList = new ArrayList<>();
+        OutstandingResponseModel outstandingResponseModel = new OutstandingResponseModel();
         LocalDate currentDate = LocalDate.now();
-        List<Map<String,Object>> getOutStandingReport=attendanceRepository.outStandingReport(startDate,currentDate);
-        for (Map<String,Object> items:getOutStandingReport) {
-            Integer installmentCount=(Integer) items.get(VariableCodes.INSTALLMENT_COUNTER);
-            Double dueAmount=items.get( VariableCodes.DUE_AMOUNT)==null?0.0: (Double)items.get( VariableCodes.DUE_AMOUNT);
-            String installmentType=(String) items.get(VariableCodes.INSTALLMENT_TYPE);
-            OutStandingDataModel outstandingDataModel=new OutStandingDataModel();
+        List<Map<String, Object>> getOutStandingReport = attendanceRepository.outStandingReport(startDate, currentDate);
+        for (Map<String, Object> items : getOutStandingReport) {
+            Integer installmentCount = (Integer) items.get(VariableCodes.INSTALLMENT_COUNTER);
+            Double dueAmount = items.get(VariableCodes.DUE_AMOUNT) == null ? 0.0 : (Double) items.get(VariableCodes.DUE_AMOUNT);
+            String installmentType = (String) items.get(VariableCodes.INSTALLMENT_TYPE);
+            OutStandingDataModel outstandingDataModel = new OutStandingDataModel();
             outstandingDataModel.setPaymentPlanCardId((Object) items.get(VariableCodes.ID));
             outstandingDataModel.setBatchName((String) items.get(VariableCodes.BATCH_NAME));
             outstandingDataModel.setStatus((String) items.get(VariableCodes.STATUS));
             outstandingDataModel.setDueDate((Object) items.get(VariableCodes.DUE_DATE));
             outstandingDataModel.setNameInitials((String) items.get(VariableCodes.NAME_INITIAL));
             outstandingDataModel.setDueAmount(dueAmount);
-            outstandingDataModel.setRegisteredDate((Object)items.get(VariableCodes.REGISTERED_DATE));
+            outstandingDataModel.setRegisteredDate((Object) items.get(VariableCodes.REGISTERED_DATE));
             outstandingDataModel.setInstallmentType(installmentType);
             outstandingDataModel.setStudentId((Integer) items.get(VariableCodes.STUDENT_ID));
             outstandingDataModel.setInstallmentCounter(installmentCount);
             outstandingDataModel.setCourseName((String) items.get(VariableCodes.COURSE_NAME));
-            outstandingDataModel.setPaymentStatus((String) items.get(VariableCodes.PAYMENT_STATUS));
+            outstandingDataModel.setPaymentStatus(Objects.equals((String) items.get(VariableCodes.PAYMENT_STATUS), "") ? "PENDING" : (String) items.get(VariableCodes.PAYMENT_STATUS));
             outstandingDataModel.setTaxPaid((Double) items.get(VariableCodes.TAX_PAID));
-            outstandingDataModel.setPaymentType(paymentType(installmentCount,installmentType));
+            outstandingDataModel.setPaymentType(paymentType(installmentCount, installmentType));
             outstandingDataModel.setStudentCategory((String) items.get(VariableCodes.STUDENT_CATEGORY));
             outstandingList.add(outstandingDataModel);
-            amount+=dueAmount;
+            amount += dueAmount;
         }
         outstandingResponseModel.setTotalDueAmount(BigDecimal.valueOf(amount).toPlainString());
         outstandingResponseModel.setDataList(outstandingList);
-        if(getOutStandingReport.isEmpty()){
+        if (getOutStandingReport.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(outstandingResponseModel);
         }
         return responseList;
     }
-    public String paymentType(Integer count,String type){
-        return type+" "+count;
+
+    public String paymentType(Integer count, String type) {
+        return type + " " + count;
     }
 
     @Override
@@ -164,29 +167,30 @@ public class ReportServiceImpl implements ReportService {
 
         for (Map<String, Object> items : otherPaymentOutStandingReport) {
             OutStandingOtherPaymentDataModel outStandingOtherPaymentDataModel = new OutStandingOtherPaymentDataModel();
-            Double amount = items.get(VariableCodes.DUE_AMOUNT)==null?0.0:(Double) items.get(VariableCodes.DUE_AMOUNT);
+            Double amount = items.get(VariableCodes.DUE_AMOUNT) == null ? 0.0 : (Double) items.get(VariableCodes.DUE_AMOUNT);
             outStandingOtherPaymentDataModel.setId((Long) items.get(VariableCodes.ID));
             outStandingOtherPaymentDataModel.setStatus((String) items.get(VariableCodes.PAYMENT_PLAN_CARDS_STATUS));
             outStandingOtherPaymentDataModel.setAmount(amount);
             outStandingOtherPaymentDataModel.setStudentId((Integer) items.get(VariableCodes.STUDENT_ID));
             outStandingOtherPaymentDataModel.setDueDate((Object) items.get(VariableCodes.DUE_DATE));
-            outStandingOtherPaymentDataModel.setName((String) items.get(VariableCodes.NAME));
+            outStandingOtherPaymentDataModel.setPaymentType((String) items.get(VariableCodes.NAME));
             outStandingOtherPaymentDataModel.setBatchName((String) items.get(VariableCodes.BATCH_NAME));
             outStandingOtherPaymentDataModel.setCourseName((String) items.get(VariableCodes.COURSE_NAME));
-            outStandingOtherPaymentDataModel.setTotalPaid((Double)items.get(VariableCodes.TOTAL_PAID) );
-            outStandingOtherPaymentDataModel.setDueAmount((Double)items.get(VariableCodes.DUE_AMOUNT));
+            outStandingOtherPaymentDataModel.setTotalPaid((Double) items.get(VariableCodes.TOTAL_PAID));
+            outStandingOtherPaymentDataModel.setDueAmount((Double) items.get(VariableCodes.DUE_AMOUNT));
             outStandingOtherPaymentDataModel.setRegisteredDate((String) items.get(VariableCodes.REGISTERED_DATE));
             outStandingOtherPaymentDataModel.setPaymentStatus((String) items.get(VariableCodes.PAYMENT_STATUS));
             outStandingOtherPaymentDataModel.setStudentCategory((String) items.get(VariableCodes.STUDENT_CATEGORY));
+            outStandingOtherPaymentDataModel.setNameInitials((String) items.get(VariableCodes.NAME_INITIAL));
             outStandingOtherPaymentDataModels.add(outStandingOtherPaymentDataModel);
             dueAmount += amount;
         }
 
         outStandingOtherPaymentResponseModel.setTotalDueAmount(BigDecimal.valueOf(dueAmount).toPlainString());
         outStandingOtherPaymentResponseModel.setDataList(outStandingOtherPaymentDataModels);
-        if(otherPaymentOutStandingReport.isEmpty()){
+        if (otherPaymentOutStandingReport.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(outStandingOtherPaymentResponseModel);
         }
@@ -196,14 +200,14 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ResponseList getIncomeReport(String startDate,String endDate) throws ParseException {
-        ResponseList responseList=new ResponseList();
-        Double courseFee=0.0;
-        Double registration=0.0;
-        Double initialFee=0.0;
-        Double totalInitials=0.0;
-        IncomeReportResponseModel incomeReportResponseModel=new IncomeReportResponseModel();
-        if(endDate.isEmpty() || endDate.equals("null")){
+    public ResponseList getIncomeReport(String startDate, String endDate) throws ParseException {
+        ResponseList responseList = new ResponseList();
+        Double courseFee = 0.0;
+        Double registration = 0.0;
+        Double initialFee = 0.0;
+        Double totalInitials = 0.0;
+        IncomeReportResponseModel incomeReportResponseModel = new IncomeReportResponseModel();
+        if (endDate.isEmpty() || endDate.equals("null")) {
             LocalDate currentDate = LocalDate.now();
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -211,38 +215,40 @@ public class ReportServiceImpl implements ReportService {
             endDate = currentDate.format(formatter);
 
         }
-        List<Map<String,Object>>getStudentPaymentPlanCards=attendanceRepository.getIncomeReport(startDate,endDate);
+        List<Map<String, Object>> getStudentPaymentPlanCards = attendanceRepository.getIncomeReport(startDate, endDate);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        List<IncomeReportDataModel> incomeReportDataModels=new ArrayList<>();
+        List<IncomeReportDataModel> incomeReportDataModels = new ArrayList<>();
 
-        for (Map<String,Object> items:getStudentPaymentPlanCards) {
-            String installmentType=(String) items.get(VariableCodes.INSTALLMENT_TYPE);
-            if(installmentType.equals(VariableCodes.COURSE_FEE)){
-                totalInitials= items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID);
-                courseFee+=totalInitials;
+        for (Map<String, Object> items : getStudentPaymentPlanCards) {
+            String installmentType = (String) items.get(VariableCodes.INSTALLMENT_TYPE);
+            if (installmentType.equals(VariableCodes.COURSE_FEE)) {
+                totalInitials = items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID);
+                courseFee += totalInitials;
             }
             if (installmentType.equals(VariableCodes.REGISTRATION)) {
-                totalInitials=items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID);
-                registration+= totalInitials;
-            }if(installmentType.equals(VariableCodes.INITIAL_FEE)){
-                totalInitials+=items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID);
-                initialFee+=totalInitials;
+                totalInitials = items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID);
+                registration += totalInitials;
             }
-            IncomeReportDataModel incomeReportDataModel =new IncomeReportDataModel();
-            incomeReportDataModel.setPaymentPlanCardId((Object)items.get(VariableCodes.ID));
+            if (installmentType.equals(VariableCodes.INITIAL_FEE)) {
+                totalInitials += items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID);
+                initialFee += totalInitials;
+            }
+            IncomeReportDataModel incomeReportDataModel = new IncomeReportDataModel();
+            incomeReportDataModel.setPaymentPlanCardId((Object) items.get(VariableCodes.ID));
             incomeReportDataModel.setStudentId((Integer) items.get(VariableCodes.STUDENT_ID));
             incomeReportDataModel.setDueDate((Object) items.get(VariableCodes.DUE_DATE));
-            incomeReportDataModel.setNameInitials((String)items.get(VariableCodes.NAME_INITIAL) );
-            incomeReportDataModel.setRegisteredDate((Object)items.get(VariableCodes.REGISTERED_DATE));
-            incomeReportDataModel.setInstallmentType( (String)items.get(VariableCodes.INSTALLMENT_TYPE));
+            incomeReportDataModel.setNameInitials((String) items.get(VariableCodes.NAME_INITIAL));
+            incomeReportDataModel.setRegisteredDate((Object) items.get(VariableCodes.REGISTERED_DATE));
+            incomeReportDataModel.setStudentCategory((String) items.get(VariableCodes.STUDENT_CATEGORY));
+            incomeReportDataModel.setInstallmentType((String) items.get(VariableCodes.INSTALLMENT_TYPE));
             incomeReportDataModel.setInstallmentCounter((Integer) items.get(VariableCodes.INSTALLMENT_COUNTER));
-            incomeReportDataModel.setDueAmount(items.get(VariableCodes.DUE_AMOUNT)==null?0.0:(Double) items.get(VariableCodes.DUE_AMOUNT));
-            incomeReportDataModel.setAmount(items.get(VariableCodes.AMOUNT)==null?0.0:(Double) items.get(VariableCodes.AMOUNT));
-            incomeReportDataModel.setTaxPaid(items.get(VariableCodes.TAX_PAID)==null?0.0:(Double) items.get(VariableCodes.TAX_PAID));
-            incomeReportDataModel.setTotalPaid(items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID));
-            incomeReportDataModel.setTotalLatePaymentPaid(items.get(VariableCodes.TOTAL_LATE_PAYMENT_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_LATE_PAYMENT_PAID));
-            incomeReportDataModel.setPaymentStatus((String)items.get(VariableCodes.PAYMENT_STATUS));
-            incomeReportDataModel.setBatchName((String)items.get(VariableCodes.BATCH_NAME));
+            incomeReportDataModel.setDueAmount(items.get(VariableCodes.DUE_AMOUNT) == null ? 0.0 : (Double) items.get(VariableCodes.DUE_AMOUNT));
+            incomeReportDataModel.setAmount(items.get(VariableCodes.AMOUNT) == null ? 0.0 : (Double) items.get(VariableCodes.AMOUNT));
+            incomeReportDataModel.setTaxPaid(items.get(VariableCodes.TAX_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TAX_PAID));
+            incomeReportDataModel.setTotalPaid(items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID));
+            incomeReportDataModel.setTotalLatePaymentPaid(items.get(VariableCodes.TOTAL_LATE_PAYMENT_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_LATE_PAYMENT_PAID));
+            incomeReportDataModel.setPaymentStatus((String) items.get(VariableCodes.PAYMENT_STATUS));
+            incomeReportDataModel.setBatchName((String) items.get(VariableCodes.BATCH_NAME));
             incomeReportDataModel.setBatchId((Long) items.get(VariableCodes.BATCH_ID));
             incomeReportDataModel.setCourseId((Long) items.get(VariableCodes.COURSE_ID));
             incomeReportDataModel.setCourseName((String) items.get(VariableCodes.COURSE_NAME));
@@ -254,15 +260,15 @@ public class ReportServiceImpl implements ReportService {
 
             incomeReportDataModels.add(incomeReportDataModel);
         }
-        Double total=initialFee+courseFee+registration;
+        Double total = initialFee + courseFee + registration;
         incomeReportResponseModel.setTotalIncome(BigDecimal.valueOf(total).toPlainString());
         incomeReportResponseModel.setData(incomeReportDataModels);
         incomeReportResponseModel.setInitialIncome(BigDecimal.valueOf(initialFee).toPlainString());
         incomeReportResponseModel.setRegistrationIncome(BigDecimal.valueOf(registration).toPlainString());
         incomeReportResponseModel.setCourseFeeIncome(BigDecimal.valueOf(courseFee).toPlainString());
-        if(getStudentPaymentPlanCards.isEmpty()){
+        if (getStudentPaymentPlanCards.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(incomeReportResponseModel);
         }
@@ -271,10 +277,10 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ResponseList getIncomeReportOtherPayment(String startDate,String endDate) throws ParseException {
-        ResponseList responseList=new ResponseList();
-        List<IncomeReportOtherPaymentDataModel> incomeReportOtherPaymentDataModels=new ArrayList<>();
-        if(endDate.isEmpty() || endDate.equals("null")){
+    public ResponseList getIncomeReportOtherPayment(String startDate, String endDate) throws ParseException {
+        ResponseList responseList = new ResponseList();
+        List<IncomeReportOtherPaymentDataModel> incomeReportOtherPaymentDataModels = new ArrayList<>();
+        if (endDate.isEmpty() || endDate.equals("null")) {
             LocalDate currentDate = LocalDate.now();
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -283,22 +289,22 @@ public class ReportServiceImpl implements ReportService {
 
         }
 
-        List<Map<String,Object>>getIncomeReportOtherPayment=attendanceRepository.getIncomeReportOtherPayment(startDate,endDate);
-        Double totalIncome=0.0;
-        IncomeReportOtherPaymentResponseModel incomeReportOtherPaymentResponseModel=new IncomeReportOtherPaymentResponseModel();
-        for (Map<String,Object> items:getIncomeReportOtherPayment) {
-            Double totalPaid = items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID);
-            IncomeReportOtherPaymentDataModel incomeReportOtherPaymentDataModel=new IncomeReportOtherPaymentDataModel();
+        List<Map<String, Object>> getIncomeReportOtherPayment = attendanceRepository.getIncomeReportOtherPayment(startDate, endDate);
+        Double totalIncome = 0.0;
+        IncomeReportOtherPaymentResponseModel incomeReportOtherPaymentResponseModel = new IncomeReportOtherPaymentResponseModel();
+        for (Map<String, Object> items : getIncomeReportOtherPayment) {
+            Double totalPaid = items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID);
+            IncomeReportOtherPaymentDataModel incomeReportOtherPaymentDataModel = new IncomeReportOtherPaymentDataModel();
             incomeReportOtherPaymentDataModel.setPaymentPlanCardId((Long) items.get(VariableCodes.ID));
             incomeReportOtherPaymentDataModel.setStudentId((Integer) items.get(VariableCodes.STUDENT_ID));
-            incomeReportOtherPaymentDataModel.setNameInitials((String)items.get(VariableCodes.NAME_INITIAL));
+            incomeReportOtherPaymentDataModel.setNameInitials((String) items.get(VariableCodes.NAME_INITIAL));
             incomeReportOtherPaymentDataModel.setPaymentPlanCardStatus((String) items.get(VariableCodes.PAYMENT_PLAN_CARDS_STATUS));
-            incomeReportOtherPaymentDataModel.setAmount(items.get(VariableCodes.AMOUNT)==null?0.0:(Double) items.get(VariableCodes.AMOUNT));
-            incomeReportOtherPaymentDataModel.setTotalPaid(items.get(VariableCodes.TOTAL_PAID)==null?0.0:(Double) items.get(VariableCodes.TOTAL_PAID));
+            incomeReportOtherPaymentDataModel.setAmount(items.get(VariableCodes.AMOUNT) == null ? 0.0 : (Double) items.get(VariableCodes.AMOUNT));
+            incomeReportOtherPaymentDataModel.setTotalPaid(items.get(VariableCodes.TOTAL_PAID) == null ? 0.0 : (Double) items.get(VariableCodes.TOTAL_PAID));
             incomeReportOtherPaymentDataModel.setPaymentStatus((String) items.get(VariableCodes.PAYMENT_STATUS));
             incomeReportOtherPaymentDataModel.setDueDate((Object) items.get(VariableCodes.DUE_DATE));
             incomeReportOtherPaymentDataModel.setName((String) items.get(VariableCodes.NAME));
-            incomeReportOtherPaymentDataModel.setBatchName((String)items.get(VariableCodes.BATCH_NAME));
+            incomeReportOtherPaymentDataModel.setBatchName((String) items.get(VariableCodes.BATCH_NAME));
             incomeReportOtherPaymentDataModel.setBatchId((Long) items.get(VariableCodes.BATCH_ID));
             incomeReportOtherPaymentDataModel.setCourseId((Long) items.get(VariableCodes.COURSE_ID));
             incomeReportOtherPaymentDataModel.setCourseName((String) items.get(VariableCodes.COURSE_NAME));
@@ -306,14 +312,15 @@ public class ReportServiceImpl implements ReportService {
             incomeReportOtherPaymentDataModel.setDeptName((String) items.get(VariableCodes.DEPT_NAME));
             incomeReportOtherPaymentDataModel.setFacultyId((Integer) items.get(VariableCodes.FACULTY_ID));
             incomeReportOtherPaymentDataModel.setFacultyName((String) items.get(VariableCodes.FACULTY_NAME));
+            incomeReportOtherPaymentDataModel.setStudentCategory((String) items.get(VariableCodes.STUDENT_CATEGORY));
             incomeReportOtherPaymentDataModels.add(incomeReportOtherPaymentDataModel);
-            totalIncome+=totalPaid;
+            totalIncome += totalPaid;
         }
         incomeReportOtherPaymentResponseModel.setDataList(incomeReportOtherPaymentDataModels);
         incomeReportOtherPaymentResponseModel.setTotalIncome(BigDecimal.valueOf(totalIncome).toPlainString());
-        if(getIncomeReportOtherPayment.isEmpty()){
+        if (getIncomeReportOtherPayment.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(incomeReportOtherPaymentResponseModel);
         }
@@ -322,11 +329,11 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ResponseList getActiveToTemporaryDrop(String startDate, String endDate) {
-        ResponseList responseList=new ResponseList();
-        List<Map<String,Object>> getActiveToTemporaryDrop=attendanceRepository.getActiveToTemporaryDrop(startDate,endDate);
-        if(getActiveToTemporaryDrop.isEmpty()){
+        ResponseList responseList = new ResponseList();
+        List<Map<String, Object>> getActiveToTemporaryDrop = attendanceRepository.getActiveToTemporaryDrop(startDate, endDate);
+        if (getActiveToTemporaryDrop.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(getActiveToTemporaryDrop);
         }
@@ -334,12 +341,20 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ResponseList getFullPaymentDetails() {
-        ResponseList responseList=new ResponseList();
-        List<Map<String,Object>> getFullPaymentDetails=attendanceRepository.getFullPaymentDetails();
-        if(getFullPaymentDetails.isEmpty()){
+    public ResponseList getFullPaymentDetails(String batchId) {
+        ResponseList responseList = new ResponseList();
+        List<Map<String, Object>> getFullPaymentDetails;
+        if (batchId.isEmpty() || batchId.equals("null")) {
+            getFullPaymentDetails = attendanceRepository.getFullPaymentDetails();
+        } else {
+            Long newBatchId = Long.parseLong(batchId);
+
+            getFullPaymentDetails = attendanceRepository.getFullPaymentDetailsWithBatch(newBatchId);
+        }
+
+        if (getFullPaymentDetails.isEmpty()) {
             responseList.setCode(204);
-        }else{
+        } else {
             responseList.setCode(200);
             responseList.setData(getFullPaymentDetails);
         }

@@ -12,13 +12,15 @@ public class OutStandingOtherPaymentDataModel {
     private String status;
     @JsonProperty("student_id")
     private Integer studentId;
+    @JsonProperty("name_initials")
+    private String nameInitials;
 
     private Double amount;
     @JsonProperty("due_date")
     private Object dueDate;
     private String name;
-    //    @JsonProperty("payment_type")
-//    private String paymentType;
+    @JsonProperty("payment_type")
+    private String paymentType;
     @JsonProperty("batch_name")
     private String batchName;
     @JsonProperty("course_name")

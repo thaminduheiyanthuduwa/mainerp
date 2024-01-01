@@ -23,6 +23,8 @@ public class IncomeReportOtherPaymentDataModel {
     @JsonProperty("due_date")
     private Object dueDate;
     private String name;
+    @JsonProperty("student_category")
+    private String studentCategory;
 
     @JsonProperty("batch_id")
     private Long batchId;

@@ -58,7 +58,7 @@ public class ReportController {
         return reportService.getActiveToTemporaryDrop(startDate,endDate);
     }
     @GetMapping("/get-full-payment-details")
-    public  ResponseList getFullPaymentDetails(){
-        return reportService.getFullPaymentDetails();
+    public  ResponseList getFullPaymentDetails(@RequestParam(value = "batch_id") String batchId){
+        return reportService.getFullPaymentDetails(batchId);
     }
 }

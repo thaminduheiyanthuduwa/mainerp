@@ -115,7 +115,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "FROM (SELECT\n" +
             "            'TBA' as degree,\n" +
             "            ba.batch_name,\n" +
-            "            s.range_id as admission_number,           \n" +
+            "            s.range_id as admission_number,\n" +
             "            s.full_name, \n" +
             "            SUM(CASE WHEN (fd.installment_type = 'Registration' AND fs.status <> 'PAID') THEN fs.amount END) AS registration_fee_paid,\n" +
             "            SUM(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN fs.amount END) AS course_fee_paid,\n" +
@@ -131,15 +131,19 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "        LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
             "        LEFT JOIN students s ON s.range_id = fc.student_id\n" +
             "        LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
+            "        LEFT JOIN courses c ON c.course_id = ba.course_id\n" +
+            "        LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
             "        WHERE\n" +
             "             s.range_id IS NOT NULL\n" +
+            "            AND c.course_id NOT IN ('19')\n" +
+            "            AND c.course_type_id NOT IN ('2')\n" +
+            "            AND bt.id NOT IN ('4')\n" +
             "        GROUP BY\n" +
             "            s.range_id, ba.batch_name, admission_number, s.full_name\n" +
             "        HAVING \n" +
             "        \t MIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL :dateRange  DAY)\n" +
             "            AND MIN(fs.due_date) <= CURDATE()) obj1\n" +
             "            LEFT JOIN (\n" +
-            "\n" +
             "                SELECT\n" +
             "    fc.student_id,\n" +
             "    latest_payment.updated_at AS latest_payment_date,\n" +
@@ -167,30 +171,43 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "ORDER BY `latest_payment_date` DESC\n" +
             "\n" +
             "                ) obj2 ON obj2.student_id = obj1.admission_number  \n" +
-            "ORDER BY `no_of_days_outstanding` ASC",nativeQuery = true)
-    List<Map<String,Object>> fetchDueReports(Integer dateRange);
-    @Query(value = "SELECT s.full_name, s.range_id, c.course_name,ba.batch_name,bt.description as student_category,  IF(s.reg_date = '0000-00-00', NULL, s.reg_date) as reg_date " +
+            "ORDER BY `no_of_days_outstanding` ASC", nativeQuery = true)
+    List<Map<String, Object>> fetchDueReports(Integer dateRange);
+
+    @Query(value = "SELECT \n" +
+            "fs.id,\n" +
+            "s.full_name,\n" +
+            " s.range_id as student_id,\n" +
+            " c.course_name,\n" +
+            " b.batch_name,\n" +
+            " bt.description as student_category,\n" +
+            " IF(s.reg_date = '0000-00-00', NULL, s.reg_date) as reg_date \n" +
             "FROM students s\n" +
-            "LEFT JOIN finance_student_payment_plan_cards fs ON s.student_id = fs.student_id\n" +
-            "LEFT JOIN batch_student bs ON bs.student_id = s.range_id\n" +
-            "LEFT JOIN courses c ON c.course_id = bs.student_reg_courses_id\n" +
-            "LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
-            "LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
-            "WHERE s.status = 1 AND fs.id IS NULL and c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2');", nativeQuery = true)
+            "            LEFT JOIN finance_student_payment_plan_cards fs ON s.student_id = fs.student_id\n" +
+            "            LEFT JOIN batch_student bs ON bs.student_id = s.range_id\n" +
+            "            LEFT JOIN batches b ON bs.batch_id = b.batch_id\n" +
+            "            LEFT JOIN courses c ON c.course_id = b.course_id\n" +
+            "            LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
+            "            WHERE s.status = 1 \n" +
+            "            AND fs.id IS NULL \n" +
+            "            AND bt.id NOT IN ('4') \n" +
+            "            AND b.course_id NOT IN ('19') \n" +
+            "            AND c.course_type_id NOT IN ('2') \n" +
+            "            group by s.student_id, b.batch_id", nativeQuery = true)
     List<Map<String, Object>> getStudentsWithoutPaymentCards();
 
     @Query(value = "SELECT\n" +
             "        std.range_id AS student_id,fsppc.id,\n" +
             "        std.name_initials,\n" +
-            "     NULLIF(std.reg_date, '0000-00-00') as registered_date,\n" +
+            "    CAST(NULLIF(std.reg_date, '0000-00-00') AS CHAR) AS registered_date,\n" +
             "        fsfd.installment_type,\n" +
             "        fsps.installment_counter,\n" +
-            "\t\tIF(fsps.status='',fsps.amount,((fsps.amount+fsps.tax_paid)-(fsps.total_paid-fsps.total_late_payment_paid))) as due_amount,\n" +
-            "\t\tfsps.amount,\n" +
-            "\t\tfsps.tax_paid,\n" +
-            "\t\tfsps.total_paid,\n" +
-            "\t\tfsps.total_late_payment_paid,\n" +
-            "\t\tfsps.status as payment_status,\n" +
+            "IF(fsps.status='',fsps.amount,((fsps.amount+fsps.tax_paid)-(fsps.total_paid-fsps.total_late_payment_paid))) as due_amount,\n" +
+            "fsps.amount,\n" +
+            "fsps.tax_paid,\n" +
+            "fsps.total_paid,\n" +
+            "fsps.total_late_payment_paid,\n" +
+            "fsps.status as payment_status,\n" +
             "        b.batch_name,\n" +
             "      bt.description as student_category,\n" +
             "        c.course_name,\n" +
@@ -205,12 +222,13 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "        LEFT JOIN batches AS b ON b.batch_id = bs.batch_id\n" +
             "        LEFT JOIN courses AS c ON c.course_id = b.course_id\n" +
             "        LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
-            "    WHERE  c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2') \n" +
-            "and fsps.status NOT IN ('PAID') \n" +
-            "and fsps.due_date >= :startDate and fsps.due_date<=:endDate \n" +
-            "and fsppc.status='APPROVED'\n" +
-            "group by fsppc.id, std.range_id,fsps.id"
-            ,
+            "WHERE fsps.status NOT IN ('PAID')\n" +
+            "AND c.course_id NOT IN ('19') \n" +
+            "AND c.course_type_id NOT IN ('2')\n" +
+            "AND bt.id NOT IN ('4')\n" +
+            "AND fsps.due_date >= :startDate and fsps.due_date<=:endDate \n" +
+            "AND fsppc.status='APPROVED'\n" +
+            "group by fsppc.id, std.range_id,fsps.id",
             nativeQuery = true)
     List<Map<String, Object>> outStandingReport(String startDate, LocalDate endDate);
 
@@ -248,7 +266,8 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "SELECT \n" +
                     "    fsppc.id,\n" +
                     "    std.range_id AS student_id,\n" +
-                    "    NULLIF(std.reg_date, '0000-00-00') as registered_date,\n" +
+                    "    std.name_initials,\n" +
+                    "    CAST(NULLIF(std.reg_date, '0000-00-00') AS CHAR) AS registered_date,\n" +
                     "    fsppc.status AS payment_plan_cards_status,\n" +
                     "    op.amount,\n" +
                     "    op.total_paid,\n" +
@@ -269,8 +288,10 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
                     "    LEFT JOIN courses AS c ON c.course_id = b.course_id\n" +
                     "    LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
                     "WHERE \n" +
-                    "     c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2') \n" +
-                    "    AND op.status NOT IN ('PAID') \n" +
+                    "   op.status NOT IN ('PAID')\n" +
+                    "AND c.course_id NOT IN ('19') \n" +
+                    "AND c.course_type_id NOT IN ('2')\n" +
+                    "AND bt.id NOT IN ('4')\n" +
                     "    AND op.due_date <= CURDATE() \n" +
                     "    AND fsppc.status = 'APPROVED'\n" +
                     "    AND op.due_date IS NOT NULL AND op.due_date <> '0000-00-00'\n" +
@@ -323,10 +344,10 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "fsps.tax_paid,\n" +
             "fsps.total_paid,\n" +
             "fsps.total_late_payment_paid,\n" +
-            "fsps.status as payment_status,\n" +
-            "b.batch_name,\n" +
+            "IF(fsps.status='', 'Pending',fsps.status) as payment_status,\n" +
             "NULLIF(fsps.due_date, '0000-00-00') as due_date,\n" +
             "fsppc.status,\n" +
+            "bt.description as student_category,\n" +
             "b.batch_id,\n" +
             "b.batch_name,\n" +
             "c.course_id,\n" +
@@ -346,24 +367,28 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "        LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
             "LEFT JOIN departments AS d ON c.dept_id = d.dept_id\n" +
             "LEFT JOIN faculties AS f ON d.faculty_id = f.faculty_id\n" +
-            "    WHERE c.course_id NOT IN ('19') \n" +
-            "and fsps.status IN ('PAID','PARTIAL') \n" +
-            "and fsppc.status='APPROVED'\n"+
-            " AND fsps.due_date IS NOT NULL AND fsps.due_date <> '0000-00-00'\n" +
-            "  and fsps.due_date >= :startDate and fsps.due_date<=:endDate  " +
+            "WHERE \n" +
+            "c.course_id NOT IN ('19') \n" +
+            "AND c.course_type_id NOT IN ('2')\n" +
+            "AND bt.id NOT IN ('4')\n" +
+            "AND fsppc.status='APPROVED'\n" +
+            "AND fsps.due_date IS NOT NULL AND fsps.due_date <> '0000-00-00'\n" +
+            "AND fsps.due_date >= :startDate and fsps.due_date<=:endDate  " +
             "group by fsppc.id, std.range_id,fsps.id\n"
-            ,nativeQuery = true)
-    List<Map<String, Object>> getIncomeReport(String startDate,String endDate);
+            , nativeQuery = true)
+    List<Map<String, Object>> getIncomeReport(String startDate, String endDate);
+
     @Query(value = "select \n" +
             "fsppc.id,\n" +
-            " std.name_initials,\n"+
+            "std.name_initials,\n" +
             "std.range_id as student_id,\n" +
             "fsppc.status as payment_plan_cards_status,\n" +
             "op.amount,\n" +
             "op.total_paid,\n" +
-            "op.status as payment_status,\n" +
+            "IF(op.status='', 'Pending' , op.status) as payment_status,\n" +
             "op.due_date,\n" +
             "cm.name,\n" +
+            "bt.description as student_category,\n" +
             "b.batch_id,\n" +
             "b.batch_name,\n" +
             "c.course_id,\n" +
@@ -383,70 +408,168 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "        LEFT JOIN batch_types AS bt ON bt.id = bs.batch_type\n" +
             "LEFT JOIN departments AS d ON c.dept_id = d.dept_id\n" +
             "LEFT JOIN faculties AS f ON d.faculty_id = f.faculty_id\n" +
-            "where c.course_id NOT IN ('19') \n" +
-            "and op.status IN ('PAID','PARTIAL') \n" +
+            "WHERE \n" +
+            "c.course_id NOT IN ('19') \n" +
+            "AND c.course_type_id NOT IN ('2')\n" +
+            "AND bt.id NOT IN ('4')\n" +
             "and op.due_date <= :endDate \n" +
             "and fsppc.status='APPROVED'\n" +
-            "    AND op.due_date IS NOT NULL AND op.due_date <> '0000-00-00'\n" +
-            "    AND op.due_date >= :startDate" +
+            "AND op.due_date IS NOT NULL AND op.due_date <> '0000-00-00'\n" +
+            "AND op.due_date >= :startDate" +
             " group by fsppc.id, std.range_id,op.id"
-            ,nativeQuery = true)
-    List<Map<String, Object>> getIncomeReportOtherPayment(String startDate,String endDate);
-    @Query(value = "select obj2.admission_number,obj2.student_category, obj2.full_name, obj2.batch_name, obj3.drop_date, obj2.course_fee_due_installment AS outstanding_now_course_fee_due_installment, obj2.initial_fee_due_installment AS outstanding_now_initial_fee_due_installment,\n" +
-            "obj2.late_payment as outstanding_now_fine, \t0 as outstanding_now_other_payments, obj3.course_fee_due_installment AS outstanding_drop_course_fee_due_installment, obj3.initial_fee_due_installment AS outstanding_drop_initial_fee_due_installment,\n" +
-            "obj3.late_payment as outstanding_drop_fine, \t0 as outstanding_drop_other_payments, DATEDIFF(CURDATE(), obj3.drop_date) AS date_difference_in_days, obj3.drop_category\n" +
-            "from (SELECT\n" +
-            "            'TBA' as degree,\n" +
-            "            ba.batch_name,\n" +
-            "            ba.batch_id,\n" +
-            "            s.range_id as admission_number,\n" +
-            "            s.full_name,\n" +
-            "            bt.description as student_category,\n"+
-            "            COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment,\n" +
-            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, SUM(fs.late_payment) as late_payment\n" +
-            "        FROM\n" +
-            "            finance_student_payment_schedules fs\n" +
-            "        LEFT JOIN finance_student_fee_definitions fd ON fs.fee_definition_id = fd.id\n" +
-            "        LEFT JOIN finance_student_payment_plan_cards fc ON fs.payment_plan_card_id = fc.id\n" +
-            "        LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
-            "        LEFT JOIN students s ON s.range_id = fc.student_id\n" +
-            "        LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
-            "        LEFT JOIN  batch_types bt ON bt.id=bs.batch_type\n" +
-            "        WHERE\n" +
-            "             s.range_id IS NOT NULL AND  fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP') AND\n" +
-            "\t\t\t fs.due_date >= :start_date AND fs.due_date <= :end_date\n" +
-            "        GROUP BY\n" +
-            "            s.range_id, ba.batch_name, ba.batch_id, admission_number, s.full_name) obj2\n" +
-            "            LEFT JOIN (SELECT \n" +
-            "    s.range_id,\n" +
-            "    ba.batch_id,\n" +
-            "    ba.batch_name,\n" +
-            "    COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment,\n" +
-            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, SUM(fs.late_payment) as late_payment,\n" +
-            "    MAX(fsd.status_updated_on) as drop_date,\n" +
-            "    GROUP_CONCAT( DISTINCT fc.status SEPARATOR ', ') AS drop_category\n" +
-            "FROM\n" +
-            "    finance_student_payment_schedules fs\n" +
-            "LEFT JOIN finance_student_fee_definitions fd ON fs.fee_definition_id = fd.id\n" +
-            "LEFT JOIN finance_student_payment_plan_cards fc ON fs.payment_plan_card_id = fc.id\n" +
-            "LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
-            "LEFT JOIN students s ON s.range_id = fc.student_id\n" +
-            "LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
-            "LEFT JOIN courses c ON c.course_id = ba.course_id\n"+
-            "LEFT JOIN finance_student_drop_active_history fsd ON fsd.student_id = fc.student_id\n" +
-            "WHERE\n" +
-            "    s.range_id IS NOT NULL AND fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP') AND fs.due_date >= :start_date AND fs.due_date <= :end_date\n" +
-            "    AND fs.due_date <= fsd.status_updated_on and  c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2')\n" +
-            "GROUP BY\n" +
-            "    s.range_id, ba.batch_name, ba.batch_id) obj3 ON obj2.admission_number = obj3.range_id AND obj2.batch_id = obj3.batch_id;",nativeQuery = true)
-    List<Map<String, Object>> getActiveToTemporaryDrop(String start_date,String end_date);
-    @Query(value = "SELECT           \n" +
-            "    s.range_id AS admission_number,           \n" +
-            "    s.full_name, \n" +
+            , nativeQuery = true)
+    List<Map<String, Object>> getIncomeReportOtherPayment(String startDate, String endDate);
+
+
+//    @Query(value = "select obj2.admission_number,obj2.student_category, obj2.full_name, obj2.batch_name, obj3.drop_date, obj2.course_fee_due_installment AS outstanding_now_course_fee_due_installment, obj2.initial_fee_due_installment AS outstanding_now_initial_fee_due_installment,\n" +
+//            "obj2.late_payment as outstanding_now_fine, \t0 as outstanding_now_other_payments, obj3.course_fee_due_installment AS outstanding_drop_course_fee_due_installment, obj3.initial_fee_due_installment AS outstanding_drop_initial_fee_due_installment,\n" +
+//            "obj3.late_payment as outstanding_drop_fine, \t0 as outstanding_drop_other_payments, DATEDIFF(CURDATE(), obj3.drop_date) AS date_difference_in_days, obj3.drop_category\n" +
+//            "from (SELECT\n" +
+//            "            'TBA' as degree,\n" +
+//            "            ba.batch_name,\n" +
+//            "            ba.batch_id,\n" +
+//            "            s.range_id as admission_number,\n" +
+//            "            s.full_name,\n" +
+//            "            bt.description as student_category,\n" +
+//            "            COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment,\n" +
+//            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, SUM(fs.late_payment) as late_payment\n" +
+//            "        FROM\n" +
+//            "            finance_student_payment_schedules fs\n" +
+//            "        LEFT JOIN finance_student_fee_definitions fd ON fs.fee_definition_id = fd.id\n" +
+//            "        LEFT JOIN finance_student_payment_plan_cards fc ON fs.payment_plan_card_id = fc.id\n" +
+//            "        LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
+//            "        LEFT JOIN students s ON s.range_id = fc.student_id\n" +
+//            "        LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
+//            "        LEFT JOIN  batch_types bt ON bt.id=bs.batch_type\n" +
+//            "        WHERE\n" +
+//            "             s.range_id IS NOT NULL AND  fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP') AND\n" +
+//            "\t\t\t fs.due_date >= :start_date AND fs.due_date <= :end_date\n" +
+//            "        GROUP BY\n" +
+//            "            s.range_id, ba.batch_name, ba.batch_id, admission_number, s.full_name) obj2\n" +
+//            "            LEFT JOIN (SELECT \n" +
+//            "    s.range_id,\n" +
+//            "    ba.batch_id,\n" +
+//            "    ba.batch_name,\n" +
+//            "    COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment,\n" +
+//            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, SUM(fs.late_payment) as late_payment,\n" +
+//            "    MAX(fsd.status_updated_on) as drop_date,\n" +
+//            "    GROUP_CONCAT( DISTINCT fc.status SEPARATOR ', ') AS drop_category\n" +
+//            "FROM\n" +
+//            "    finance_student_payment_schedules fs\n" +
+//            "LEFT JOIN finance_student_fee_definitions fd ON fs.fee_definition_id = fd.id\n" +
+//            "LEFT JOIN finance_student_payment_plan_cards fc ON fs.payment_plan_card_id = fc.id\n" +
+//            "LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
+//            "LEFT JOIN students s ON s.range_id = fc.student_id\n" +
+//            "LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
+//            "LEFT JOIN courses c ON c.course_id = ba.course_id\n" +
+//            "LEFT JOIN finance_student_drop_active_history fsd ON fsd.student_id = fc.student_id\n" +
+//            "WHERE\n" +
+//            "    s.range_id IS NOT NULL AND fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP') AND fs.due_date >= :start_date AND fs.due_date <= :end_date\n" +
+//            "    AND fs.due_date <= fsd.status_updated_on and  c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2')\n" +
+//            "GROUP BY\n" +
+//            "    s.range_id, ba.batch_name, ba.batch_id) obj3 ON obj2.admission_number = obj3.range_id AND obj2.batch_id = obj3.batch_id;", nativeQuery = true)
+//    List<Map<String, Object>> getActiveToTemporaryDrop(String start_date, String end_date);
+
+
+    @Query(value = "SELECT \n" +
+            "    obj2.admission_number,\n" +
+            "    obj2.student_category,\n" +
+            "    obj2.full_name,\n" +
+            "    obj2.batch_name,\n" +
+            "    obj2.due_date,\n" +
+            "    obj3.drop_date,\n" +
+            "    obj2.course_fee_due_installment AS outstanding_now_course_fee_due_installment,\n" +
+            "    obj2.initial_fee_due_installment AS outstanding_now_initial_fee_due_installment, \n" +
+            "    obj2.late_payment AS outstanding_now_fine, \n" +
+            "    0 AS outstanding_now_other_payments,\n" +
+            "    obj3.course_fee_due_installment AS outstanding_drop_course_fee_due_installment,\n" +
+            "    obj3.initial_fee_due_installment AS outstanding_drop_initial_fee_due_installment, \n" +
+            "    obj3.late_payment AS outstanding_drop_fine, \n" +
+            "    0 AS outstanding_drop_other_payments,\n" +
+            "    DATEDIFF(CURDATE(), obj3.drop_date) AS date_difference_in_days,\n" +
+            "    obj3.drop_category \n" +
+            "FROM \n" +
+            "    (\n" +
+            "        SELECT \n" +
+            "            'TBA' AS degree, \n" +
+            "            ba.batch_name, \n" +
+            "            ba.batch_id, \n" +
+            "            s.range_id AS admission_number, \n" +
+            "            s.full_name, \n" +
+            "            fs.due_date,\n" +
+            "            bt.description AS student_category, \n" +
+            "            COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment, \n" +
+            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, \n" +
+            "            SUM(fs.late_payment) AS late_payment \n" +
+            "        FROM \n" +
+            "            finance_student_payment_schedules fs \n" +
+            "            LEFT JOIN finance_student_fee_definitions fd ON fs.fee_definition_id = fd.id \n" +
+            "            LEFT JOIN finance_student_payment_plan_cards fc ON fs.payment_plan_card_id = fc.id \n" +
+            "            LEFT JOIN batch_student bs ON bs.student_id = fc.student_id \n" +
+            "            LEFT JOIN students s ON s.range_id = fc.student_id \n" +
+            "            LEFT JOIN batches ba ON bs.batch_id = ba.batch_id \n" +
+            "            LEFT JOIN courses c ON c.course_id = ba.course_id \n" +
+            "            LEFT JOIN batch_types bt ON bt.id = bs.batch_type \n" +
+            "        WHERE \n" +
+            "            s.range_id IS NOT NULL \n" +
+            "            AND fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP')\n" +
+            "            AND c.course_id NOT IN ('19')\n" +
+            "            AND c.course_type_id NOT IN ('2')\n" +
+            "            AND bt.id NOT IN ('4')\n" +
+            "        GROUP BY \n" +
+            "            s.range_id, ba.batch_name, ba.batch_id, admission_number, s.full_name\n" +
+            "    ) obj2 \n" +
+            "LEFT JOIN \n" +
+            "    (\n" +
+            "        SELECT  \n" +
+            "            s.range_id, \n" +
+            "            ba.batch_id, \n" +
+            "            ba.batch_name, \n" +
+            "            COUNT(CASE WHEN (fd.installment_type = 'Course Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS course_fee_due_installment, \n" +
+            "            COUNT(CASE WHEN (fd.installment_type = 'Initial Fee' AND fs.status <> 'PAID') THEN ((fs.amount+ fs.tax_paid) - (fs.total_paid - fs.total_late_payment_paid)) END) AS initial_fee_due_installment, \n" +
+            "            SUM(fs.late_payment) AS late_payment, \n" +
+            "            MAX(fsd.status_updated_on) AS drop_date, \n" +
+            "            GROUP_CONCAT(DISTINCT fc.status SEPARATOR ', ') AS drop_category \n" +
+            "        FROM finance_student_payment_plan_cards fc\n" +
+            "            LEFT JOIN students s ON s.range_id = fc.student_id \n" +
+            "            LEFT JOIN finance_student_fee_definitions fd ON fc.id = fd.payment_plan_card_id\n" +
+            "            LEFT JOIN finance_student_payment_schedules fs  ON fs.payment_plan_card_id = fc.id \n" +
+            "            LEFT JOIN batch_student bs ON bs.student_id = fc.student_id \n" +
+            "            LEFT JOIN batches ba ON bs.batch_id = ba.batch_id \n" +
+            "            LEFT JOIN courses c ON c.course_id = ba.course_id \n" +
+            "            LEFT JOIN batch_types bt ON bt.id = bs.batch_type \n" +
+            "            LEFT JOIN finance_student_drop_active_history fsd ON fsd.student_id = fc.student_id \n" +
+            "        WHERE \n" +
+            "            s.range_id IS NOT NULL AND fc.status IN ('TEMPORARY_DROP', 'INACTIVE', 'PERMANENT_DROP')\n" +
+            "            AND fs.due_date <= fsd.status_updated_on \n" +
+            "            AND c.course_id NOT IN ('19')\n" +
+            "            AND c.course_type_id NOT IN ('2')\n" +
+            "            AND bt.id NOT IN ('4')\n" +
+            "        GROUP BY \n" +
+            "            s.range_id, ba.batch_name, ba.batch_id\n" +
+            "    ) obj3 ON obj2.admission_number = obj3.range_id AND obj2.batch_id = obj3.batch_id\n" +
+            "WHERE \n" +
+            "    obj2.due_date >= :startDate \n" +
+            "    AND obj2.due_date <= :endDate", nativeQuery = true)
+    List<Map<String, Object>> getActiveToTemporaryDrop(String startDate, String endDate);
+
+
+    String COMMON_SQL = "SELECT\n" +
+            "    s.range_id AS admission_number,\n" +
+            "    s.full_name,\n" +
             "    ba.batch_name,\n" +
             "    bt.description as student_category,\n" +
-            "    s.nic_passport, \n" +
-            "    'TBA' AS student_status,\n" +
+            "    s.nic_passport,\n" +
+            "    (CASE\n" +
+            "    WHEN bs.status=0 THEN 'Active'\n" +
+            "    WHEN bs.status=1 THEN 'Transferred'\n" +
+            "    WHEN bs.status=6 THEN 'Temporary Drop'\n" +
+            "    WHEN bs.status=7 THEN 'Permanant Drop'\n" +
+            "    WHEN bs.status=9 THEN 'Permanant Suspend'\n" +
+            "    WHEN bs.status=10 THEN 'Temporary Suspend'\n" +
+            "    WHEN bs.status=12 THEN 'Slo Inactive'\n" +
+            "    WHEN bs.status=13 THEN 'Slo Drop'\n" +
+            "END ) AS student_status," +
             "    SUM(CASE WHEN fd.installment_type = 'Registration' THEN fd.fee_amount END) AS registration_fee,\n" +
             "    SUM(CASE WHEN fd.installment_type = 'Course Fee' THEN fd.fee_amount END) AS course_fee,\n" +
             "    SUM(CASE WHEN fd.installment_type = 'Initial Fee' THEN fd.fee_amount END) AS initial_fee,\n" +
@@ -473,7 +596,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "LEFT JOIN batch_student bs ON bs.student_id = fc.student_id\n" +
             "LEFT JOIN students s ON s.range_id = fc.student_id\n" +
             "LEFT JOIN batches ba ON bs.batch_id = ba.batch_id\n" +
-            "LEFT JOIN courses c  ON c.course_id = ba.course_id\n"+
+            "LEFT JOIN courses c  ON c.course_id = ba.course_id\n" +
             "LEFT JOIN  batch_types bt ON bt.id=bs.batch_type\n" +
             "LEFT JOIN (SELECT fc.student_id , SUM(fbs.approved_amount) as approved_amount\n" +
             "FROM finance_student_payment_schedules fs\n" +
@@ -482,15 +605,31 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "LEFT JOIN finance_student_payment_plans as fspp ON fspp.payment_plan_card_id = fc.id\n" +
             "left join finance_batch_scholarships  as fbs on fbs.id = fspp.scholarship_id\n" +
             "WHERE fbs.id IS NOT NULL AND fbs.finance_status = 'APPROVED'\n" +
-            "GROUP BY fc.student_id) discount ON discount.student_id = fc.student_id\n" +
+            "GROUP BY fc.student_id) discount ON discount.student_id = fc.student_id\n";
+
+    @Query(value = COMMON_SQL +
             "WHERE\n" +
             "    s.range_id IS NOT NULL\n" +
-            "and  c.course_id NOT IN ('19') or c.course_type_id NOT IN ('2')\n"+
+            "            AND c.course_id NOT IN ('19')\n" +
+            "            AND c.course_type_id NOT IN ('2')\n" +
+            "            AND bt.id NOT IN ('4')\n" +
+            "AND ba.batch_id = :batchId\n" +
             "GROUP BY\n" +
             "    s.range_id, ba.batch_name, admission_number, s.full_name, s.nic_passport, student_status\n" +
             "HAVING \n" +
-            "    MIN(fs.due_date) >= DATE_SUB(CURDATE(), INTERVAL 45 DAY)\n" +
-            "    AND MIN(fs.due_date) <= CURDATE();",nativeQuery = true)
-    List<Map<String,Object>> getFullPaymentDetails();
+            "MIN(fs.due_date) <= CURDATE()", nativeQuery = true)
+    List<Map<String, Object>> getFullPaymentDetailsWithBatch(Long batchId);
+
+    @Query(value = COMMON_SQL +
+            "WHERE\n" +
+            "    s.range_id IS NOT NULL\n" +
+            "            AND c.course_id NOT IN ('19')\n" +
+            "            AND c.course_type_id NOT IN ('2')\n" +
+            "            AND bt.id NOT IN ('4')\n" +
+            "GROUP BY\n" +
+            "    s.range_id, ba.batch_name, admission_number, s.full_name, s.nic_passport, student_status\n" +
+            "HAVING \n" +
+            "MIN(fs.due_date) <= CURDATE()", nativeQuery = true)
+    List<Map<String, Object>> getFullPaymentDetails();
 
 }

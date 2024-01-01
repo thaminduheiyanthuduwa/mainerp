@@ -17,6 +17,8 @@ public class IncomeReportDataModel {
     private Object registeredDate ;
     @JsonProperty("installment_type")
     private String installmentType;
+    @JsonProperty("student_category")
+    private String studentCategory;
     @JsonProperty("installment_counter")
     private Integer installmentCounter;
     @JsonProperty("due_amount")
