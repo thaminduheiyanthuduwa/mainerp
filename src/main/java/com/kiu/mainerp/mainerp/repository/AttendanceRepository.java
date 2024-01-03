@@ -631,5 +631,22 @@ public interface AttendanceRepository extends JpaRepository<AttendanceEntity, In
             "HAVING \n" +
             "MIN(fs.due_date) <= CURDATE()", nativeQuery = true)
     List<Map<String, Object>> getFullPaymentDetails();
+    @Query(value = "SELECT p.id, p.name_in_full,  f.faculty_name, d.dept_name,  ad.department_name, cat1.task_title, \n" +
+            "(CASE WHEN cat1.category_id = 1 THEN 'Examination - Invigilating' \n" +
+            "WHEN cat1.category_id = 2 THEN 'Lecturing - Preparation' \n" +
+            "WHEN cat1.category_id = 3 THEN 'Other' \n" +
+            "WHEN cat1.category_id = 4 THEN 'Research - Own' \n" +
+            "WHEN cat1.category_id = 5 THEN 'Lecturing - Conducting' \n" +
+            "WHEN cat1.category_id = 6 THEN 'Examination - Paper Preparing' \n" +
+            "WHEN cat1.category_id = 7 THEN 'Examination - Paper Marking' \n" +
+            "WHEN cat1.category_id = 8 THEN 'Research - Student' \n" +
+            "ELSE 'Not Identified' END) AS category, cat1.task_description, cat1.start_date, cat1.end_date, cat1.label, \n" +
+            "cat1.estimate, (CASE WHEN cat1.status = 1 THEN 'Pending' WHEN cat1.status = 3 THEN 'Completed' WHEN cat1.status = 5 THEN \n" +
+            "'Supervisor Completed' ELSE 'Not Identified' END) AS status FROM (select * from task_list WHERE start_date >= :startDate \n" +
+            "and start_date <= :endDate and user_id in (SELECT id FROM people WHERE person_type IN  ('lecturer'))\n" +
+            "and status not in (2,4))as cat1 left join (select id, name_in_full, faculty_id, dept_id, admin_department_id from people) as p on p.id = cat1.user_id \n" +
+            "left join faculties f on p.faculty_id = f.faculty_id left join departments d on p.dept_id = d.dept_id\n" +
+            "left join admin_departments ad on p.admin_department_id = ad.admin_department_id",nativeQuery = true)
+    List<Map<String,Object>> workSummaryReport(String startDate,String endDate);
 
 }

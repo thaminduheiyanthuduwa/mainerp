@@ -18,4 +18,6 @@ public interface ReportService {
     ResponseList getIncomeReportOtherPayment(String startDate,String endDate)throws ParseException;
     ResponseList getActiveToTemporaryDrop(String startDate,String endDate);
     ResponseList getFullPaymentDetails(String batchId);
+    ResponseList workSummaryReport(String startDate,String endDate,String facultyId,String deptId);
+
 }

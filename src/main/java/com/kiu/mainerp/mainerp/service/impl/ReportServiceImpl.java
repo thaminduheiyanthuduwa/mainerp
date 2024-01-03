@@ -360,4 +360,16 @@ public class ReportServiceImpl implements ReportService {
         }
         return responseList;
     }
+    @Override
+    public ResponseList workSummaryReport(String startDate, String endDate, String facultyId, String deptId) {
+        ResponseList responseList=new ResponseList();
+        List<Map<String,Object>> workSummaryReport=attendanceRepository.workSummaryReport(startDate,endDate);
+        if (workSummaryReport.isEmpty()) {
+            responseList.setCode(204);
+        } else {
+            responseList.setCode(200);
+            responseList.setData(workSummaryReport);
+        }
+        return responseList;
+    }
 }

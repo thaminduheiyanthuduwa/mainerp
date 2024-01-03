@@ -61,4 +61,8 @@ public class ReportController {
     public  ResponseList getFullPaymentDetails(@RequestParam(value = "batch_id") String batchId){
         return reportService.getFullPaymentDetails(batchId);
     }
+    @GetMapping("/work-summary-report")
+    public ResponseList workSummaryReport(@RequestParam (value = "start_date") String startDate,@RequestParam (value = "end_date") String endDate, @RequestParam (value = "faculty_id") String facultyId,@RequestParam (value = "dept_id") String deptId){
+        return  reportService.workSummaryReport(startDate,endDate,facultyId,deptId);
+    }
 }
